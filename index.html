@@ -1,0 +1,5229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Performance Tracker</title>
+<style>
+  :root {
+    --bg: #101216;
+    --panel: #181b21;
+    --panel2: #20242c;
+    --panel3: #252a34;
+    --border: #303642;
+    --text: #f0f2f5;
+    --muted: #a6afbd;
+    --accent: #4f8cff;
+    --green: #35c26a;
+    --amber: #e0a72e;
+    --red: #e05a4e;
+    --shadow: 0 14px 36px rgba(0,0,0,0.28);
+  }
+  * { box-sizing: border-box; }
+  html {
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background:
+      linear-gradient(rgba(16, 18, 22, 0.88), rgba(16, 18, 22, 0.92)),
+      url("assets/background.png") center / cover fixed no-repeat,
+      var(--bg);
+    color: var(--text);
+    padding: 4px clamp(4px, 1.4vw, 32px) clamp(4px, 1.4vw, 32px);
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+  .app-shell {
+    width: 100%;
+    max-width: none;
+    margin: 0 auto;
+    min-width: 0;
+  }
+  h1 {
+    font-size: clamp(18px, 1.35rem, 28px);
+    margin: 0 0 4px 0;
+    overflow-wrap: anywhere;
+  }
+  .hidden { display: none !important; }
+  .sub {
+    color: var(--muted);
+    font-size: clamp(11px, 0.82rem, 15px);
+    margin-bottom: 20px;
+    overflow-wrap: anywhere;
+  }
+  .app-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 10px 14px 12px;
+    border: 1px solid rgba(96, 165, 250, 0.22);
+    background:
+      linear-gradient(90deg, rgba(16, 18, 22, 0.54), rgba(16, 18, 22, 0.78)),
+      url("assets/background.png") center 20% / cover no-repeat,
+      var(--panel);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+  }
+  .app-header h1,
+  .app-header .sub,
+  .app-header #currentUserName {
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.72);
+  }
+  .user-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+  .manual-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel2);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .manual-link:hover { border-color: var(--accent); }
+  .manual-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .manual-link svg { width: 19px; height: 19px; flex-shrink: 0; }
+  .auth-panel .manual-link { margin-top: 14px; }
+  .manual-new-pointer {
+    color: #ffc068;
+    font-size: 19px;
+    animation: manual-pointer 1.8s ease-in-out infinite;
+  }
+  .manual-new-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border: 1px solid #ff9556;
+    border-radius: 999px;
+    color: #fff3c4;
+    background: linear-gradient(135deg, #9d2c13, #6f280e);
+    font-size: 11px;
+    line-height: 1.5;
+    animation: manual-fire 2s ease-in-out infinite alternate;
+  }
+  .manual-new-flame { display: inline-block; animation: manual-flame 1.6s ease-in-out infinite alternate; }
+  @keyframes manual-pointer {
+    0%, 100% { opacity: .45; transform: translateX(-3px); }
+    50% { opacity: 1; transform: translateX(2px); }
+  }
+  @keyframes manual-fire {
+    from { box-shadow: 0 0 3px #f9731640; text-shadow: 0 0 2px #ffba62; }
+    to { box-shadow: 0 0 12px #f9731680; text-shadow: 0 0 7px #ff9a37; }
+  }
+  @keyframes manual-flame {
+    from { transform: scale(.9) rotate(-6deg); }
+    to { transform: scale(1.12) rotate(5deg); }
+  }
+  .manual-update-notice {
+    position: fixed;
+    z-index: 60;
+    width: min(344px, calc(100vw - 24px));
+    padding: 18px;
+    border: 1px solid #c98143;
+    border-radius: 12px;
+    background: linear-gradient(140deg, #30251f, #181b21 65%);
+    color: var(--text);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, .5);
+  }
+  .manual-update-notice::before {
+    content: "";
+    position: absolute;
+    left: var(--notice-arrow-x, 50%);
+    top: -7px;
+    width: 12px;
+    height: 12px;
+    background: #30251f;
+    border-left: 1px solid #c98143;
+    border-top: 1px solid #c98143;
+    transform: translateX(-50%) rotate(45deg);
+  }
+  .manual-update-notice.above::before {
+    top: auto;
+    bottom: -7px;
+    background: #181b21;
+    transform: translateX(-50%) rotate(225deg);
+  }
+  .manual-update-notice.offscreen { visibility: hidden; }
+  .manual-update-notice h2 { font-size: 17px; margin: 0 0 8px; }
+  .manual-update-notice p { font-size: 13px; line-height: 1.6; color: var(--muted); margin: 0 0 14px; }
+  .manual-update-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .manual-update-actions button { min-height: 40px; }
+  @media (prefers-reduced-motion: reduce) {
+    .manual-new-pointer, .manual-new-badge, .manual-new-flame { animation: none; }
+  }
+  body.manual-open { overflow: hidden; }
+  .manual-dialog {
+    width: min(1240px, calc(100vw - 24px));
+    height: min(940px, calc(100dvh - 24px));
+    max-width: none;
+    max-height: none;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .manual-dialog[open] { display: flex; flex-direction: column; }
+  .manual-dialog::backdrop { background: rgba(0, 0, 0, 0.72); }
+  .manual-dialog-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .manual-dialog-top h2 { margin: 0; font-size: 18px; }
+  .manual-dialog-top button { min-height: 40px; }
+  .manual-dialog iframe { width: 100%; flex: 1; min-height: 0; border: 0; background: var(--bg); }
+  body.user-dialog-open { overflow: hidden; }
+  .managed-users { display: grid; gap: 10px; margin-top: 20px; }
+  .managed-user-row {
+    display: grid;
+    grid-template-columns: minmax(160px, 1.1fr) minmax(140px, 1fr) minmax(110px, .7fr) auto;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel2);
+    transition: background-color .25s, border-color .25s;
+  }
+  .managed-user-row.is-inactive { background: #4b2027; border-color: #a34b5a; }
+  .managed-user-name { display: block; font-size: 15px; overflow-wrap: anywhere; }
+  .managed-user-meta { display: block; color: var(--muted); font-size: 12px; margin-top: 5px; overflow-wrap: anywhere; }
+  .managed-user-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .managed-user-actions button { min-height: 38px; padding: 7px 10px; }
+  .managed-user-actions button:disabled { opacity: .45; cursor: not-allowed; }
+  .user-state { display: inline-flex; align-items: center; gap: 7px; color: #8ae6ad; font-size: 12px; font-weight: 700; }
+  .user-state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .user-state.inactive { color: #ffb4bd; }
+  .user-dialog {
+    width: min(780px, calc(100vw - 24px));
+    max-width: none;
+    max-height: calc(100dvh - 24px);
+    padding: 0;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  .user-dialog[open] { display: flex; flex-direction: column; }
+  .user-dialog::backdrop { background: rgba(0, 0, 0, .7); }
+  .user-action-dialog { width: min(460px, calc(100vw - 24px)); }
+  .user-dialog-header, .user-dialog-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 16px 20px; }
+  .user-dialog-header { border-bottom: 1px solid var(--border); }
+  .user-dialog-header h2 { margin: 0; font-size: 20px; }
+  .user-dialog-body { overflow-y: auto; padding: 20px; min-height: 0; }
+  .user-dialog-footer { border-top: 1px solid var(--border); }
+  .user-dialog-footer button, .user-dialog-header button { min-height: 40px; }
+  .user-details-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .user-details-fields label, .user-action-field { display: grid; gap: 7px; color: var(--muted); font-size: 13px; }
+  .user-details-fields input, .user-details-fields select, .user-action-field input { width: 100%; min-width: 0; min-height: 42px; }
+  .user-details-wide { grid-column: 1 / -1; }
+  .user-details-info { display: flex; gap: 10px 24px; flex-wrap: wrap; margin: 0 0 20px; font-size: 12px; color: var(--muted); }
+  .user-details-info div { display: grid; gap: 4px; }
+  .user-details-info dd { margin: 0; color: var(--text); }
+  .user-settings { display: grid; gap: 10px; margin-top: 22px; }
+  .user-setting { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel2); }
+  .user-setting strong { display: block; font-size: 14px; }
+  .user-setting small { display: block; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .user-switch { position: relative; display: inline-flex; flex: 0 0 auto; }
+  .user-switch input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
+  .user-switch-track { width: 46px; height: 26px; background: #692d37; border: 1px solid #c96d7c; border-radius: 999px; transition: background-color .25s, border-color .25s; }
+  .user-switch-track::after { content: ""; display: block; width: 18px; height: 18px; margin: 3px; border-radius: 50%; background: #fff; transition: transform .25s; }
+  .user-switch input:checked + .user-switch-track { background: #22764b; border-color: #6add9d; }
+  .user-switch input:checked + .user-switch-track::after { transform: translateX(20px); }
+  .user-switch input:focus-visible + .user-switch-track { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .user-switch input:disabled { cursor: not-allowed; }
+  .user-switch input:disabled + .user-switch-track { opacity: .5; }
+  .user-dialog-note { font-size: 12px; line-height: 1.6; color: var(--muted); }
+  .user-feedback { min-height: 20px; margin: 12px 0 0; font-size: 13px; color: #8ae6ad; }
+  .user-feedback.error { color: #ffadb7; }
+  .user-action-field { margin-top: 16px; }
+  .password-visibility { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; }
+  .password-visibility input { width: auto; }
+  @media (max-width: 1300px) {
+    .managed-user-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .managed-user-actions { grid-column: 1 / -1; }
+  }
+  @media (max-width: 600px) {
+    .managed-user-row, .user-details-fields { grid-template-columns: minmax(0, 1fr); }
+    .user-dialog-body, .user-dialog-header, .user-dialog-footer { padding: 14px; }
+    .managed-user-actions button { flex: 1 1 120px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .managed-user-row, .user-switch-track, .user-switch-track::after { transition: none; }
+  }
+  .role-pill {
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .top-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    min-width: 0;
+  }
+  .top-bar > label {
+    flex: 0 0 auto;
+  }
+  .top-bar select,
+  .top-bar input,
+  .top-bar .date-field {
+    flex: 1 1 150px;
+    max-width: 260px;
+  }
+  .top-bar input.date-native {
+    flex: 0 0 auto;
+  }
+  label {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  select,
+  input[type=date],
+  input[type=text],
+  input[type=password],
+  input[type=number] {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    min-width: 0;
+    max-width: 100%;
+  }
+  select {
+    color-scheme: dark;
+  }
+  select option,
+  select optgroup {
+    background: #20242c;
+    color: var(--text);
+  }
+  select option:checked {
+    background: #2f4f91;
+    color: #fff;
+  }
+  input:disabled,
+  select:disabled {
+    opacity: 0.68;
+    cursor: not-allowed;
+  }
+  input.date-native {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .date-field {
+    position: relative;
+    min-width: 0;
+  }
+  .date-trigger {
+    width: 100%;
+    min-height: 38px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, rgba(35, 42, 56, 0.96), rgba(20, 24, 33, 0.96));
+    border: 1px solid rgba(96, 165, 250, 0.32);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 8px;
+    text-align: left;
+    font-weight: 600;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  }
+  .date-trigger:hover,
+  .date-trigger.active {
+    border-color: #facc15;
+    box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.2) inset;
+  }
+  .date-trigger span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .date-trigger-icon {
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    flex: 0 0 auto;
+  }
+  .date-picker {
+    position: fixed;
+    z-index: 50;
+    width: min(300px, calc(100vw - 12px));
+    max-height: calc(100svh - 12px);
+    overflow: auto;
+    padding: 12px;
+    background: linear-gradient(180deg, rgba(32, 36, 44, 0.98), rgba(24, 27, 33, 0.98));
+    border: 1px solid rgba(96, 165, 250, 0.5);
+    border-radius: 8px;
+    box-shadow: var(--shadow), 0 0 28px rgba(79, 140, 255, 0.16);
+  }
+  .date-picker-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .date-picker-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .date-picker-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 86px;
+    gap: 6px;
+    flex: 1 1 auto;
+  }
+  .date-picker-controls select {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    background: #20242c;
+    border-color: rgba(96, 165, 250, 0.35);
+    color: var(--text);
+  }
+  .date-picker-nav {
+    display: flex;
+    gap: 6px;
+  }
+  .date-picker-nav button,
+  .date-picker-day,
+  .date-picker-footer button {
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+  .date-picker-nav button {
+    min-width: 32px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .date-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .date-picker-weekday {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    text-align: center;
+    padding: 3px 0;
+  }
+  .date-picker-day {
+    min-height: 32px;
+    background: var(--panel2);
+    border: 1px solid transparent;
+    color: var(--text);
+    text-align: center;
+  }
+  .date-picker-day:hover {
+    border-color: var(--accent);
+  }
+  .date-picker-day.muted {
+    color: #697386;
+  }
+  .date-picker-day.today {
+    color: #d7e6ff;
+    border-color: rgba(79, 140, 255, 0.55);
+  }
+  .date-picker-day.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .date-picker-day:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .date-picker-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .date-picker-footer button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .auth-shell {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    min-height: 100svh;
+    margin: 0;
+    display: grid;
+    place-items: center;
+    padding: clamp(4px, 2vw, 24px);
+    overflow: auto;
+    background:
+      radial-gradient(circle at center, rgba(79, 140, 255, 0.12), transparent 34%),
+      linear-gradient(90deg, rgba(16, 18, 22, 0.45), rgba(16, 18, 22, 0.78) 38%, rgba(16, 18, 22, 0.72) 62%, rgba(16, 18, 22, 0.42)),
+      url("assets/team-tracker-login-background.png") center / cover no-repeat,
+      var(--bg);
+  }
+  .auth-panel,
+  .management-panel,
+  .calendar-panel,
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .auth-panel {
+    width: min(420px, 100%);
+    position: relative;
+    padding: clamp(16px, 2.2vw, 28px);
+    overflow: hidden;
+    background:
+      linear-gradient(180deg, rgba(32, 36, 44, 0.88), rgba(24, 27, 33, 0.82));
+    border-color: rgba(96, 165, 250, 0.45);
+    box-shadow:
+      0 24px 80px rgba(0, 0, 0, 0.44),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+      0 0 32px rgba(79, 140, 255, 0.14);
+    backdrop-filter: blur(14px);
+  }
+  .auth-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--accent), #35c26a, transparent);
+  }
+  .auth-panel h1 {
+    font-size: clamp(20px, 1.6rem, 30px);
+    margin-bottom: 6px;
+  }
+  .auth-panel .sub {
+    margin-bottom: 22px;
+  }
+  .auth-panel label {
+    display: block;
+    font-weight: 700;
+    color: #d7e6ff;
+  }
+  .auth-panel input {
+    width: 100%;
+    margin: 7px 0 14px;
+    background: rgba(16, 18, 22, 0.68);
+    border-color: rgba(166, 175, 189, 0.28);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  }
+  .auth-panel input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow:
+      0 0 0 3px rgba(79, 140, 255, 0.18),
+      0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  }
+  .auth-panel button {
+    width: 100%;
+    margin-top: 4px;
+    padding-block: 11px;
+    background: linear-gradient(135deg, #3f7fff, #35c26a);
+    box-shadow: 0 12px 28px rgba(79, 140, 255, 0.22);
+  }
+  .auth-error,
+  .form-error {
+    color: var(--red);
+    font-size: 13px;
+    min-height: 18px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: clamp(8px, 1vw, 18px);
+    margin-bottom: 24px;
+    min-width: 0;
+  }
+  .card {
+    padding: clamp(10px, 1vw, 18px);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    border-width: 1px;
+    border-color: color-mix(in srgb, var(--status-color, var(--accent)) 80%, var(--border));
+    min-width: 0;
+    isolation: isolate;
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--status-color, var(--accent)) 10%, rgba(28, 34, 46, 0.98)), rgba(17, 20, 27, 0.98) 54%, rgba(28, 32, 43, 0.96));
+    box-shadow:
+      0 16px 36px rgba(0, 0, 0, 0.34),
+      0 0 0 1px rgba(255, 255, 255, 0.035) inset;
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background:
+      conic-gradient(from var(--edge-angle, 0deg),
+        transparent 0deg 58deg,
+        var(--status-color, var(--accent)) 62deg 88deg,
+        transparent 92deg 180deg,
+        var(--card-edge-2, var(--status-color, var(--accent))) 186deg 210deg,
+        transparent 214deg 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.96;
+    pointer-events: none;
+    animation: edgeRun 7s linear infinite;
+    z-index: 1;
+  }
+  .card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      linear-gradient(115deg, transparent 0 36%, rgba(255, 255, 255, 0.045) 37%, transparent 39% 100%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 46px);
+    opacity: 0.34;
+  }
+  @property --edge-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+  }
+  @keyframes edgeRun {
+    to { --edge-angle: 360deg; }
+  }
+  @keyframes goldShine {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--status-color, var(--accent)) 76%, #fff 8%);
+    box-shadow:
+      0 22px 46px rgba(0, 0, 0, 0.42),
+      0 0 0 1px rgba(255, 255, 255, 0.055) inset;
+  }
+  .card.team-card {
+    --card-accent: #38bdf8;
+    --card-accent-2: #22c55e;
+  }
+  .card.user-card {
+    --card-accent: #a78bfa;
+    --card-accent-2: #f472b6;
+  }
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .card-badge,
+  .filter-chip {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--panel2);
+  }
+  .card-badge {
+    background: color-mix(in srgb, var(--status-color, var(--accent)) 10%, rgba(32, 36, 44, 0.94));
+    border-color: color-mix(in srgb, var(--status-color, var(--accent)) 38%, var(--border));
+    color: #d7e6ff;
+  }
+  .card-badge.team { color: #dbeafe; }
+  .card-badge.user { color: #e9d5ff; }
+  .card-badge.status {
+    color: #fff;
+    border-color: color-mix(in srgb, var(--status-color, var(--accent)) 70%, var(--border));
+    background: color-mix(in srgb, var(--status-color, var(--accent)) 28%, rgba(32, 36, 44, 0.86));
+  }
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 14px;
+  }
+  .filter-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin: 0 0 12px;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(24, 27, 33, 0.96), rgba(20, 24, 32, 0.96));
+    border: 1px solid rgba(96, 165, 250, 0.22);
+    border-radius: 8px;
+  }
+  .filter-field {
+    display: grid;
+    gap: 5px;
+  }
+  .filter-field input,
+  .filter-field select {
+    width: 100%;
+    min-width: 0;
+    background: linear-gradient(135deg, rgba(35, 42, 56, 0.96), rgba(20, 24, 33, 0.96));
+    border-color: rgba(96, 165, 250, 0.32);
+  }
+  .filter-field input:focus,
+  .filter-field select:focus,
+  .top-bar select:focus,
+  .top-bar input:focus {
+    outline: none;
+    border-color: #facc15;
+    box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.22) inset;
+  }
+  .filter-chip {
+    cursor: pointer;
+    border-color: rgba(96, 165, 250, 0.28);
+    background: linear-gradient(135deg, rgba(37, 42, 52, 0.96), rgba(25, 30, 40, 0.96));
+    color: #d7e6ff;
+  }
+  .filter-chip.active {
+    color: var(--text);
+    border-color: #facc15;
+    background: linear-gradient(135deg, rgba(250, 204, 21, 0.24), rgba(79, 140, 255, 0.14));
+  }
+  .card-topline {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    min-width: 0;
+  }
+  .card-topline > div:first-child {
+    min-width: 0;
+  }
+  .donut {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: conic-gradient(var(--accent) var(--pct), #2a2f39 0);
+    flex: 0 0 auto;
+    padding: 6px;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  }
+  .donut span {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(14, 17, 24, 0.96);
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    color: #f8fbff;
+    font-weight: 700;
+  }
+  .card h3 {
+    margin: 0 0 2px 0;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+    color: #fff;
+  }
+  .card .target {
+    color: #b8c7de;
+    font-size: 12px;
+    margin-bottom: 10px;
+    overflow-wrap: anywhere;
+  }
+  .bar-bg {
+    background: rgba(13, 17, 24, 0.74);
+    border-radius: 6px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    margin-top: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+  }
+  .card-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--muted);
+    gap: 10px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .card-stats b {
+    color: var(--text);
+    font-size: 16px;
+  }
+  .mini-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .mini-metric {
+    background:
+      linear-gradient(145deg, color-mix(in srgb, var(--status-color, var(--accent)) 10%, rgba(36, 42, 54, 0.94)), rgba(23, 28, 38, 0.92));
+    border: 1px solid color-mix(in srgb, var(--status-color, var(--accent)) 26%, var(--border));
+    border-radius: 8px;
+    padding: 8px;
+    min-width: 0;
+  }
+  .mini-metric span {
+    display: block;
+    color: #b8c7de;
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+  .mini-metric b {
+    display: block;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
+  }
+  .sparkline {
+    display: flex;
+    align-items: end;
+    gap: 3px;
+    height: 42px;
+    margin-top: 12px;
+    padding: 8px;
+    background:
+      linear-gradient(180deg, rgba(16, 20, 28, 0.9), rgba(24, 30, 40, 0.82));
+    border: 1px solid color-mix(in srgb, var(--status-color, var(--accent)) 30%, var(--border));
+    border-radius: 8px;
+  }
+  .sparkline span {
+    flex: 1;
+    min-width: 3px;
+    border-radius: 4px 4px 0 0;
+    background: var(--accent);
+    opacity: 0.95;
+  }
+  .pct {
+    font-weight: 600;
+    text-transform: lowercase;
+  }
+  .card.status-gold {
+    background:
+      linear-gradient(135deg, rgba(64, 48, 18, 0.92), rgba(18, 20, 27, 0.98) 54%, rgba(45, 35, 18, 0.94));
+  }
+  .card.status-gold::after {
+    background:
+      linear-gradient(115deg, transparent 0 32%, rgba(255, 238, 156, 0.16) 35%, transparent 38% 100%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.024) 0 1px, transparent 1px 46px);
+    background-size: 220% 100%, auto;
+    animation: goldShine 2.8s ease-in-out infinite;
+  }
+  .quick-edit {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+  }
+  .quick-edit input {
+    width: 100%;
+    min-width: 0;
+  }
+  .quick-edit .quick-label {
+    grid-column: 1 / -1;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .quick-edit .current-total {
+    grid-column: 1 / -1;
+    color: var(--text);
+    font-size: 13px;
+  }
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .card {
+      border-color: var(--card-accent, var(--accent));
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.34);
+    }
+    .card-badge,
+    .mini-metric,
+    .sparkline {
+      border-color: var(--card-accent, var(--accent));
+    }
+  }
+  .calendar-panel {
+    position: relative;
+    padding: clamp(12px, 1.2vw, 18px);
+    margin-bottom: 24px;
+    min-width: 0;
+    overflow: hidden;
+    background:
+      linear-gradient(135deg, rgba(22, 27, 38, 0.96), rgba(15, 18, 25, 0.98));
+    border-color: rgba(96, 165, 250, 0.28);
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+  }
+  .calendar-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    background: linear-gradient(90deg, #ef4444, #facc15, #22c55e, #facc15);
+    opacity: 0.9;
+  }
+  .calendar-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+  .calendar-summary {
+    color: #d7e6ff;
+    font-size: 12px;
+    border: 1px solid rgba(96, 165, 250, 0.28);
+    background: rgba(32, 36, 44, 0.72);
+    border-radius: 999px;
+    padding: 5px 9px;
+  }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 7px;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .calendar-weekday {
+    color: #b8c7de;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 6px 8px;
+    letter-spacing: 0.6px;
+    background: rgba(32, 36, 44, 0.52);
+    border: 1px solid rgba(96, 165, 250, 0.12);
+    border-radius: 6px;
+  }
+  .calendar-day {
+    min-height: clamp(54px, 5vw, 112px);
+    width: 100%;
+    position: relative;
+    background:
+      linear-gradient(145deg, rgba(35, 42, 56, 0.94), rgba(21, 26, 36, 0.96));
+    border: 1px solid rgba(96, 165, 250, 0.18);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 7px;
+    cursor: pointer;
+    min-width: 0;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.018);
+    transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+  }
+  .calendar-day::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    background: rgba(96, 165, 250, 0.32);
+    border-radius: 8px 8px 0 0;
+  }
+  .calendar-day:hover {
+    transform: translateY(-1px);
+    border-color: rgba(96, 165, 250, 0.75);
+  }
+  .calendar-day.good {
+    border-color: rgba(34, 197, 94, 0.78);
+    background: linear-gradient(145deg, rgba(20, 83, 45, 0.68), rgba(18, 39, 35, 0.94));
+  }
+  .calendar-day.good::before { background: #22c55e; }
+  .calendar-day.mid {
+    border-color: rgba(250, 204, 21, 0.78);
+    background: linear-gradient(145deg, rgba(92, 72, 19, 0.68), rgba(36, 31, 24, 0.94));
+  }
+  .calendar-day.mid::before { background: #facc15; }
+  .calendar-day.low {
+    border-color: rgba(239, 68, 68, 0.78);
+    background: linear-gradient(145deg, rgba(91, 30, 35, 0.68), rgba(37, 25, 31, 0.94));
+  }
+  .calendar-day.low::before { background: #ef4444; }
+  .calendar-day.leave-day {
+    border-color: #f97316;
+    box-shadow: inset 0 0 0 1px rgba(249, 115, 22, 0.55);
+  }
+  .calendar-day.selected {
+    border-color: #4f8cff;
+    box-shadow: inset 0 0 0 1px #4f8cff;
+  }
+  .calendar-day.selected::before { background: #4f8cff; }
+  .calendar-day.today .calendar-date {
+    color: #111827;
+    background: #facc15;
+    border-color: #facc15;
+  }
+  .calendar-empty {
+    min-height: clamp(54px, 5vw, 112px);
+    border: 1px dashed rgba(96, 165, 250, 0.08);
+    border-radius: 8px;
+    background: rgba(16, 18, 22, 0.18);
+  }
+  .calendar-date {
+    width: fit-content;
+    min-width: 24px;
+    text-align: center;
+    font-size: 12px;
+    color: #d7e6ff;
+    font-weight: 700;
+    border: 1px solid rgba(96, 165, 250, 0.22);
+    border-radius: 999px;
+    padding: 2px 6px;
+    background: rgba(17, 24, 39, 0.68);
+  }
+  .calendar-revenue {
+    font-size: 15px;
+    font-weight: 700;
+    word-break: break-word;
+  }
+  .calendar-values {
+    display: grid;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+  .calendar-values span {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 3px 5px;
+    border: 1px solid rgba(96, 165, 250, 0.14);
+    border-radius: 5px;
+    background: rgba(13, 17, 24, 0.42);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .calendar-values .unit-usd { color: #93c5fd; }
+  .calendar-values .unit-inr { color: #fcd34d; }
+  .calendar-values .unit-leads { color: #86efac; }
+  .calendar-meta {
+    font-size: 11px;
+    color: #b8c7de;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-top: 1px solid rgba(96, 165, 250, 0.12);
+    padding-top: 5px;
+  }
+  .leave-marker {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--red);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .calendar-editor {
+    margin-top: 12px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+  .calendar-edit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px;
+    margin: 10px 0;
+  }
+  .calendar-edit-item {
+    display: grid;
+    gap: 5px;
+  }
+  .calendar-edit-item input {
+    width: 100%;
+  }
+  .calendar-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+    gap: 8px;
+  }
+  .table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+  }
+  table {
+    width: 100%;
+    min-width: 620px;
+    border-collapse: collapse;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .chart-panel {
+    display: grid;
+    gap: 8px;
+    margin: 10px 0 14px;
+  }
+  .chart-title {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .svg-chart {
+    width: 100%;
+    height: clamp(90px, 14vh, 180px);
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .history-table {
+    width: 100%;
+    font-size: 12px;
+  }
+  th, td {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  th {
+    background: var(--panel2);
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.4px;
+  }
+  tr:last-child td { border-bottom: none; }
+  input.entry {
+    width: min(120px, 100%);
+  }
+  .entry-panel {
+    position: relative;
+    overflow: hidden;
+    margin-top: 18px;
+    padding: clamp(12px, 1.2vw, 18px);
+    background: linear-gradient(135deg, rgba(22, 27, 38, 0.96), rgba(15, 18, 25, 0.98));
+    border: 1px solid rgba(96, 165, 250, 0.26);
+    border-radius: 8px;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+  }
+  .entry-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    background: linear-gradient(90deg, #22c55e, #facc15, #4f8cff);
+  }
+  .entry-panel .section-row {
+    margin: 0 0 12px;
+    position: relative;
+    z-index: 1;
+  }
+  .entry-panel .section-title {
+    font-size: 17px;
+    color: #fff;
+  }
+  .entry-table-wrap {
+    border: 1px solid rgba(96, 165, 250, 0.18);
+    border-radius: 8px;
+    background: rgba(13, 17, 24, 0.5);
+  }
+  .entry-table {
+    min-width: 760px;
+    border: 0;
+    background: transparent;
+  }
+  .entry-table th {
+    background: linear-gradient(135deg, rgba(35, 42, 56, 0.98), rgba(22, 27, 38, 0.98));
+    color: #b8c7de;
+    border-bottom-color: rgba(96, 165, 250, 0.22);
+    letter-spacing: 0.7px;
+  }
+  .entry-table td {
+    background: rgba(17, 21, 30, 0.64);
+    border-bottom-color: rgba(96, 165, 250, 0.12);
+  }
+  .entry-table tr:nth-child(even) td {
+    background: rgba(23, 28, 38, 0.64);
+  }
+  .entry-table tr:hover td {
+    background: rgba(32, 39, 53, 0.82);
+  }
+  .entry-table tr.entry-team td:first-child {
+    border-left: 2px solid #4f8cff;
+  }
+  .entry-table tr.entry-user td:first-child {
+    border-left: 2px solid #a78bfa;
+  }
+  .entry-table .unit-cell,
+  .entry-table .current-cell {
+    font-weight: 800;
+    color: #d7e6ff;
+  }
+  .entry-table .action-cell {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .entry-table input.entry {
+    width: min(140px, 100%);
+    background: rgba(13, 17, 24, 0.72);
+    border-color: rgba(96, 165, 250, 0.28);
+    color: #fff;
+    font-weight: 700;
+  }
+  .entry-table input.entry:focus {
+    outline: none;
+    border-color: #facc15;
+    box-shadow: inset 0 0 0 1px rgba(250, 204, 21, 0.22);
+  }
+  .entry-name {
+    display: grid;
+    gap: 3px;
+  }
+  .entry-name strong {
+    color: #fff;
+  }
+  .entry-kind {
+    width: fit-content;
+    color: #b8c7de;
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    border: 1px solid rgba(96, 165, 250, 0.24);
+    border-radius: 999px;
+    padding: 2px 7px;
+    background: rgba(32, 36, 44, 0.72);
+  }
+  .save-row {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  button {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    border: 1px solid rgba(147, 197, 253, 0.35);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 500;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+  }
+  button:hover {
+    border-color: rgba(250, 204, 21, 0.62);
+    filter: brightness(1.08);
+  }
+  button.active {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    border-color: rgba(134, 239, 172, 0.5);
+  }
+  button.secondary {
+    background: linear-gradient(135deg, rgba(37, 42, 52, 0.96), rgba(21, 27, 38, 0.96));
+    border: 1px solid rgba(96, 165, 250, 0.28);
+    color: var(--text);
+  }
+  button.danger {
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    border-color: rgba(252, 165, 165, 0.55);
+  }
+  .status {
+    font-size: 13px;
+    color: var(--green);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .status.show { opacity: 1; }
+  .section-title {
+    font-size: 16px;
+    margin: 28px 0 12px 0;
+  }
+  .section-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 12px 0;
+    flex-wrap: wrap;
+  }
+  .section-row .section-title {
+    margin: 0;
+  }
+  .section-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .dashboard-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .dashboard-layout.edit-mode-active {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 18vw);
+  }
+  .dashboard-main {
+    min-width: 0;
+    order: 1;
+  }
+  .owner-sidebar {
+    order: 2;
+    position: sticky;
+    top: 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  }
+  .sidebar-title {
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .sidebar-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .mode-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding-inline: 12px;
+    background: linear-gradient(135deg, rgba(37, 42, 52, 0.96), rgba(21, 27, 38, 0.96));
+  }
+  .mode-toggle::before {
+    content: "";
+    width: 34px;
+    height: 18px;
+    border-radius: 999px;
+    background: #111827;
+    border: 1px solid rgba(147, 197, 253, 0.34);
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.16);
+  }
+  .mode-toggle::after {
+    content: "";
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    margin-left: 4px;
+    border-radius: 999px;
+    background: #94a3b8;
+    transition: transform 0.18s ease, background 0.18s ease;
+  }
+  .mode-toggle.active::before {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.72), rgba(250, 204, 21, 0.64));
+    border-color: rgba(250, 204, 21, 0.65);
+  }
+  .mode-toggle.active {
+    background: linear-gradient(135deg, rgba(22, 163, 74, 0.28), rgba(250, 204, 21, 0.18));
+  }
+  .mode-toggle.active::after {
+    transform: translateX(16px);
+    background: #fff7c2;
+  }
+  .sidebar-panel {
+    display: grid;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+  .sidebar-entry-item {
+    display: grid;
+    gap: 7px;
+    padding: 8px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .sidebar-entry-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+  }
+  .sidebar-entry-actions input,
+  .owner-sidebar input,
+  .owner-sidebar .date-field {
+    width: 100%;
+  }
+  .daily-log {
+    margin-top: 24px;
+  }
+  .daily-log .section-title {
+    margin-bottom: 10px;
+  }
+  .day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, rgba(35, 42, 56, 0.94), rgba(20, 24, 33, 0.96));
+    border: 1px solid rgba(96, 165, 250, 0.22);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    min-width: 0;
+    gap: 12px;
+  }
+  .day-header span,
+  .day-header-preview {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .day-header-main {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+  }
+  .day-header-date {
+    font-weight: 800;
+    color: #fff;
+  }
+  .day-header-preview {
+    color: #b8c7de;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .day-header-count {
+    flex: 0 0 auto;
+    border: 1px solid rgba(250, 204, 21, 0.38);
+    color: #fcd34d;
+    border-radius: 999px;
+    padding: 4px 9px;
+    background: rgba(92, 72, 19, 0.22);
+    font-weight: 800;
+  }
+  .day-body {
+    display: none;
+    padding: 6px 8px 14px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .day-body.open { display: block; }
+  .log-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: 8px;
+  }
+  .log-item {
+    display: grid;
+    gap: 5px;
+    padding: 9px 10px;
+    border: 1px solid rgba(96, 165, 250, 0.18);
+    border-radius: 8px;
+    background: rgba(17, 21, 30, 0.72);
+  }
+  .log-item.add { border-left: 2px solid #22c55e; }
+  .log-item.revoke { border-left: 2px solid #ef4444; }
+  [data-history-id]:disabled { opacity: .55; cursor: default; filter: grayscale(1); }
+  .history-table [data-history-id] { min-width: 80px; white-space: nowrap; }
+  .log-item.snapshot { border-left: 2px solid #4f8cff; }
+  .log-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+  }
+  .log-line span {
+    color: #b8c7de;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .log-line strong {
+    color: #fff;
+    overflow-wrap: anywhere;
+    text-align: right;
+  }
+  .empty-note,
+  .loading,
+  .readonly-note {
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .empty-note {
+    padding: 12px;
+  }
+  .management-panel {
+    padding: 14px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .management-panel.active-view {
+    display: block;
+  }
+  .management-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .user-form,
+  .user-row,
+  .team-form,
+  .team-row {
+    display: grid;
+    grid-template-columns: repeat(10, minmax(110px, 1fr));
+    gap: 8px;
+    align-items: center;
+    min-width: min(100%, 980px);
+  }
+  .user-form,
+  .team-form {
+    margin-bottom: 14px;
+  }
+  .user-row,
+  .team-row {
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+  }
+  .user-form input,
+  .user-form select,
+  .user-row input,
+  .user-row select,
+  .team-form input,
+  .team-row input {
+    width: 100%;
+    min-width: 0;
+  }
+  select[multiple] {
+    min-height: 92px;
+  }
+  .team-checks {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px;
+    min-height: 92px;
+    display: grid;
+    gap: 6px;
+  }
+  .team-checks label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+    background: var(--panel3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 8px;
+    cursor: pointer;
+  }
+  .team-checks input {
+    width: auto;
+  }
+  .team-checks-empty {
+    color: var(--muted);
+    font-size: 13px;
+    align-self: center;
+  }
+  .team-dropdown {
+    position: relative;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    min-width: 0;
+  }
+  .team-dropdown summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 9px 10px;
+    color: var(--text);
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .team-dropdown summary::-webkit-details-marker {
+    display: none;
+  }
+  .team-dropdown summary::after {
+    content: "v";
+    float: right;
+    color: var(--muted);
+  }
+  .team-dropdown[open] summary::after {
+    content: "^";
+  }
+  .team-dropdown .team-checks {
+    border: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 0 0 8px 8px;
+    max-height: 220px;
+    overflow: auto;
+  }
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.58);
+    display: grid;
+    place-items: center;
+    z-index: 20;
+    padding: 16px;
+  }
+  .day-modal {
+    width: min(900px, calc(100vw - 16px));
+    max-width: 100%;
+    max-height: calc(100svh - 16px);
+    overflow: auto;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    min-width: 0;
+  }
+  .modal-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    min-width: 0;
+  }
+  .detail-list {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+  .detail-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+    gap: 8px;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    border-radius: 8px;
+    font-size: 13px;
+    min-width: 0;
+  }
+  .detail-row > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .detail-row span {
+    color: var(--muted);
+  }
+  .team-form,
+  .team-row {
+    grid-template-columns: repeat(8, minmax(100px, 1fr));
+    min-width: min(100%, 820px);
+  }
+  .user-active {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .user-active input {
+    width: auto;
+  }
+  .user-flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    align-items: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .user-flags label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+  }
+  .user-flags input {
+    width: auto;
+  }
+  @media (max-width: 900px) {
+    .dashboard-layout {
+      grid-template-columns: 1fr;
+    }
+    .owner-sidebar {
+      position: static;
+      order: 0;
+    }
+    .user-form,
+    .user-row,
+    .team-form,
+    .team-row {
+      grid-template-columns: 1fr 1fr;
+      min-width: 0;
+    }
+  }
+  @media (max-width: 720px) {
+    body { padding: 14px; }
+    .app-header { gap: 8px; }
+    .user-bar { justify-content: flex-start; }
+    .calendar-grid { gap: 4px; }
+    .calendar-day {
+      min-height: 64px;
+      padding: 6px;
+    }
+    .calendar-empty { min-height: 64px; }
+    .calendar-revenue { font-size: 12px; }
+    .calendar-values { font-size: 11px; }
+    .calendar-meta { display: none; }
+    .filter-panel { grid-template-columns: 1fr; }
+    th, td { padding: 9px 8px; }
+    input.entry { width: 88px; }
+  }
+  @media (min-width: 1800px) {
+    .grid {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+    .dashboard-layout.edit-mode-active {
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 15vw);
+    }
+  }
+  @media (min-width: 3200px) {
+    .grid {
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    }
+  }
+  @media (max-width: 520px) {
+    .top-bar,
+    .app-header,
+    .user-bar,
+    .section-row,
+    .management-top,
+    .save-row {
+      align-items: stretch;
+    }
+    .top-bar > label {
+      width: 100%;
+    }
+    .top-bar select,
+    .top-bar input,
+    .user-bar > *,
+    .section-actions > *,
+    .save-row > * {
+      flex-basis: 100%;
+      max-width: 100%;
+    }
+    .user-form,
+    .user-row,
+    .team-form,
+    .team-row,
+    .sidebar-entry-actions,
+    .quick-edit {
+      grid-template-columns: 1fr;
+    }
+    .calendar-weekday {
+      font-size: 9px;
+      padding-inline: 1px;
+      text-align: center;
+    }
+    .calendar-day {
+      padding: 4px;
+      gap: 3px;
+    }
+    .calendar-revenue {
+      font-size: 11px;
+    }
+    .calendar-values {
+      font-size: 10px;
+    }
+    .modal-backdrop {
+      padding: 6px;
+      place-items: start center;
+    }
+    .day-modal {
+      width: calc(100vw - 12px);
+      max-height: calc(100svh - 12px);
+      padding: 10px;
+    }
+    .auth-shell {
+      place-items: center;
+      background-position: center;
+    }
+  }
+  @media (max-width: 260px) {
+    body { padding: 4px; }
+    h1 { font-size: 16px; }
+    .sub,
+    .calendar-meta,
+    .card-badge.status,
+    .target,
+    .sparkline,
+    .calendar-summary,
+    .entry-kind {
+      display: none;
+    }
+    .auth-panel,
+    .top-bar,
+    .filter-panel,
+    .calendar-panel,
+    .management-panel,
+    .card {
+      padding: 6px;
+    }
+    .auth-panel {
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.38);
+      backdrop-filter: none;
+    }
+    .auth-panel .sub {
+      display: block;
+      margin-bottom: 10px;
+    }
+    button,
+    select,
+    input[type=date],
+    input[type=text],
+    input[type=password],
+    input[type=number] {
+      padding: 6px;
+      font-size: 12px;
+    }
+    .grid,
+    .mini-metrics,
+    .analytics-grid {
+      gap: 6px;
+    }
+    .card-topline {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+    .donut {
+      display: none;
+    }
+    .mini-metrics {
+      grid-template-columns: 1fr;
+    }
+    .calendar-grid {
+      gap: 2px;
+    }
+    .calendar-day,
+    .calendar-empty {
+      min-height: 24px;
+    }
+    .calendar-day {
+      padding: 2px;
+    }
+    .calendar-date {
+      font-size: 10px;
+    }
+    .calendar-values,
+    .calendar-revenue {
+      display: none;
+    }
+    table {
+      min-width: 420px;
+    }
+    th,
+    td {
+      padding: 6px;
+      font-size: 11px;
+    }
+    .entry-panel {
+      padding: 6px;
+    }
+    .entry-table {
+      min-width: 520px;
+    }
+    .entry-table input.entry {
+      width: 86px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="auth-shell hidden" id="loginView">
+  <div class="auth-panel">
+    <h1>Team Performance Tracker</h1>
+    <div class="sub">Sign in to continue.</div>
+    <label for="loginUsername">Username</label>
+    <input type="text" id="loginUsername" autocomplete="username">
+    <label for="loginPassword">Password</label>
+    <input type="password" id="loginPassword" autocomplete="current-password">
+    <button id="loginBtn">Login</button>
+    <div class="auth-error" id="loginError"></div>
+    <button type="button" class="manual-link" aria-haspopup="dialog" aria-controls="userManualDialog">
+      <span class="manual-new-pointer" aria-hidden="true">&#10140;</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 .3c0 1.7-2.5 2-2.5 3.7"/><path d="M12 16v1"/></svg>
+      User manual
+      <span class="manual-new-badge"><span class="manual-new-flame" aria-hidden="true">&#128293;</span> New</span>
+    </button>
+  </div>
+</div>
+
+<div class="app-shell hidden" id="appView">
+  <div class="app-header">
+    <div>
+      <h1>Team Performance Tracker</h1>
+      <div class="sub">Daily revenue for your active teams.</div>
+    </div>
+    <div class="user-bar">
+      <span id="currentUserName"></span>
+      <span class="role-pill" id="currentUserRole"></span>
+      <button class="secondary hidden" id="homeBtn">Home</button>
+      <button class="secondary hidden" id="editModeBtn">Edit Mode: Off</button>
+      <button class="secondary hidden" id="teamsBtn">Teams</button>
+      <button class="secondary hidden" id="usersBtn">Users</button>
+      <button class="secondary hidden" id="ratesBtn">Exchange Rates</button>
+      <button type="button" class="manual-link" id="userManualLink" title="Open user manual" aria-haspopup="dialog" aria-controls="userManualDialog">
+        <span class="manual-new-pointer" aria-hidden="true">&#10140;</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 .3c0 1.7-2.5 2-2.5 3.7"/><path d="M12 16v1"/></svg>
+        User manual
+        <span class="manual-new-badge"><span class="manual-new-flame" aria-hidden="true">&#128293;</span> New</span>
+      </button>
+      <button class="secondary" id="logoutBtn">Logout</button>
+    </div>
+  </div>
+
+  <div class="top-bar">
+    <label for="monthSelect">Month:</label>
+    <select id="monthSelect"></select>
+    <label for="entryDate">Entry date:</label>
+    <input type="date" id="entryDate">
+    <span class="loading" id="loadingMsg">Loading saved data...</span>
+  </div>
+
+  <div class="management-panel hidden" id="userPanel">
+    <div class="management-top">
+      <div class="section-title" style="margin:0;">User management</div>
+      <button class="secondary" id="closeUsersBtn">Back Home</button>
+    </div>
+    <div class="user-form">
+      <input type="text" id="newUsername" placeholder="Username">
+      <input type="text" id="newDisplayName" placeholder="Display name">
+      <select id="newRole"></select>
+      <input type="number" min="0" step="any" id="newUserTarget" placeholder="Entry target">
+      <select id="newUserCurrency"></select>
+      <select id="newUserSalesType"></select>
+      <div class="team-checks" id="newTeamChecks"></div>
+      <input type="password" id="newPassword" placeholder="Password">
+      <div class="user-flags">
+        <label><input type="checkbox" id="newShowDashboardCard"> Show on Dashboard</label>
+        <label><input type="checkbox" id="newShowEntryList" checked> Entry list</label>
+      </div>
+      <button id="addUserBtn">Add user</button>
+    </div>
+    <div class="form-error" id="userFormError"></div>
+    <div class="user-feedback" id="userManagementStatus" role="status"></div>
+    <div class="managed-users" id="usersList" role="list" aria-label="Managed users"></div>
+  </div>
+
+  <div class="management-panel hidden" id="teamPanel">
+    <div class="management-top">
+      <div class="section-title" style="margin:0;">Team management</div>
+      <button class="secondary" id="closeTeamsBtn">Back Home</button>
+    </div>
+    <div class="team-form">
+      <input type="text" id="newTeamName" placeholder="Team name">
+      <input type="number" min="0" step="any" id="newTeamTarget" placeholder="Monthly target">
+      <select id="newTeamMetricType"></select>
+      <select id="newTeamCurrency"></select>
+      <input type="number" step="1" id="newTeamPosition" placeholder="Order">
+      <select id="newTeamProgressMode"></select>
+      <label class="user-active"><input type="checkbox" id="newTeamActive" checked> Active</label>
+      <button id="addTeamBtn">Add team</button>
+    </div>
+    <div class="form-error" id="teamFormError"></div>
+    <div id="teamsList"></div>
+  </div>
+
+  <div class="management-panel hidden" id="ratesPanel">
+    <div class="management-top">
+      <div class="section-title" style="margin:0;">Exchange rates</div>
+      <button class="secondary" id="closeRatesBtn">Back Home</button>
+    </div>
+    <div class="team-form">
+      <input type="number" min="0" step="any" id="manualUsdInrRate" placeholder="USD to INR rate">
+      <button id="manualRateBtn">Manual override</button>
+      <button class="secondary" id="refreshRateBtn">Refresh live rate</button>
+    </div>
+    <div class="form-error" id="ratesFormError"></div>
+    <div id="ratesCurrent" class="detail-list"></div>
+    <div class="section-title">Rate history</div>
+    <div id="ratesHistory" class="detail-list"></div>
+  </div>
+
+  <div class="dashboard-layout" id="homeContent">
+    <aside class="owner-sidebar owner-edit-control hidden" id="ownerSidebar">
+      <div class="sidebar-title">Edit controls</div>
+      <div class="sidebar-actions">
+        <button class="secondary" id="quickTeamBtn">+ Team</button>
+        <button class="secondary" id="quickUserBtn">+ User</button>
+      </div>
+      <label for="sidebarDate">Selected day</label>
+      <input type="date" id="sidebarDate">
+      <div class="sidebar-panel" id="sidebarDaySummary"></div>
+      <div class="sidebar-panel" id="sidebarEntryControls"></div>
+      <div class="sidebar-panel" id="sidebarLeaveControls"></div>
+    </aside>
+
+    <main class="dashboard-main">
+  <div class="filter-panel" id="dashboardFilterPanel"></div>
+  <div class="filter-row" id="dashboardFilters"></div>
+  <div class="grid" id="cardsGrid"></div>
+
+  <div class="calendar-panel">
+    <div class="calendar-top">
+      <div class="section-title" style="margin:0;">Daily revenue calendar</div>
+      <div class="calendar-summary" id="calendarSummary"></div>
+    </div>
+    <div class="calendar-grid" id="calendarGrid" tabindex="0" aria-label="Daily revenue calendar"></div>
+  </div>
+
+  <section class="entry-panel">
+    <div class="section-row">
+      <div class="section-title">Enter today's figures</div>
+    </div>
+    <div class="table-scroll entry-table-wrap">
+      <table class="entry-table">
+        <thead>
+          <tr><th>Team / User</th><th>Unit</th><th>Current</th><th>Amount / Count</th><th>Revoke</th></tr>
+        </thead>
+        <tbody id="entryBody"></tbody>
+      </table>
+    </div>
+
+    <div class="save-row" id="saveRow">
+      <button id="saveBtn">Save entry</button>
+      <button class="secondary" id="clearBtn">Clear fields</button>
+      <span class="status" id="statusMsg">Saved OK</span>
+    </div>
+    <div class="readonly-note hidden" id="readonlyNote">Read-only access.</div>
+  </section>
+
+  <div class="daily-log">
+    <div class="section-title">Daily log</div>
+    <div id="logContainer"><div class="empty-note">No entries yet.</div></div>
+  </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="dayModal">
+    <div class="day-modal">
+      <div class="modal-top">
+        <div>
+          <div class="section-title" id="modalDateTitle" style="margin:0;"></div>
+          <div class="calendar-summary" id="modalDateSummary"></div>
+        </div>
+        <button class="secondary" id="closeDayModalBtn">Close</button>
+      </div>
+      <div id="modalDayDetails"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="cardModal">
+    <div class="day-modal">
+      <div class="modal-top">
+        <div>
+          <div class="section-title" id="cardModalTitle" style="margin:0;"></div>
+          <div class="calendar-summary" id="cardModalSummary"></div>
+        </div>
+        <button class="secondary" id="closeCardModalBtn">Close</button>
+      </div>
+      <div id="cardModalDetails"></div>
+    </div>
+  </div>
+</div>
+
+<aside class="manual-update-notice hidden" id="manualUpdateNotice" role="dialog" aria-modal="false" aria-labelledby="manualUpdateTitle" aria-describedby="manualUpdateText" aria-live="polite">
+  <h2 id="manualUpdateTitle">&#128293; New: User manual</h2>
+  <p id="manualUpdateText">Need a hand? The new user manual explains every page and feature. Look for the blinking arrow and New badge beside User manual.</p>
+  <div class="manual-update-actions">
+    <button type="button" id="openManualUpdateBtn">Open manual</button>
+    <button type="button" class="secondary" id="dismissManualUpdateBtn">Got it</button>
+  </div>
+</aside>
+
+<dialog class="user-dialog" id="userDetailsDialog" aria-labelledby="userDetailsTitle">
+  <div class="user-dialog-header">
+    <div><h2 id="userDetailsTitle">User details</h2><span class="user-state" id="userDetailsState"></span></div>
+    <button type="button" class="secondary" data-close-user-dialog="userDetailsDialog">Close</button>
+  </div>
+  <div class="user-dialog-body" id="userDetailsBody"></div>
+  <div class="user-dialog-footer">
+    <div class="managed-user-actions">
+      <button type="button" class="secondary" id="detailsResetPasswordBtn">Reset password</button>
+      <button type="button" class="danger" id="detailsDeleteUserBtn">Delete user</button>
+    </div>
+    <button type="button" id="saveUserDetailsBtn">Save details</button>
+  </div>
+</dialog>
+
+<dialog class="user-dialog user-action-dialog" id="userActionDialog" aria-labelledby="userActionTitle">
+  <div class="user-dialog-header">
+    <h2 id="userActionTitle">User action</h2>
+    <button type="button" class="secondary" data-close-user-dialog="userActionDialog">Close</button>
+  </div>
+  <form id="userActionForm">
+    <div class="user-dialog-body" id="userActionBody"></div>
+    <div class="user-dialog-footer"><button type="submit" id="confirmUserActionBtn">Confirm</button></div>
+  </form>
+</dialog>
+
+<dialog class="manual-dialog" id="userManualDialog" aria-labelledby="userManualTitle">
+  <div class="manual-dialog-top">
+    <h2 id="userManualTitle">User manual</h2>
+    <button type="button" class="secondary" id="closeUserManualBtn" autofocus>Close</button>
+  </div>
+  <iframe id="userManualFrame" title="Team Performance Tracker user manual" data-src="user-manual.html?embedded=1"></iframe>
+</dialog>
+
+<script>
+const ROLES = ["owner", "manager", "employee"];
+const CURRENCIES = ["USD", "INR"];
+const SALES_TYPES = [
+  { value: "leads", label: "Leads" },
+  { value: "revenue", label: "Revenue" }
+];
+
+let TEAMS = [];
+let ENTRY_USERS = [];
+let REVOKE_TEAMS = [];
+let REVOKE_USERS = [];
+let allRevokeData = {};
+let allRevokeUserData = {};
+const pendingHistoryRevokes = new Set();
+let allData = {};
+let allUserData = {};
+let allAdjustments = {};
+let allUserAdjustments = {};
+let allLeaves = {};
+let authUser = null;
+let editMode = false;
+let currentView = "home";
+let activeDashboardFilter = "all";
+let openLogDate = null;
+let dashboardFilters = {
+  rangeFrom: "",
+  rangeTo: "",
+  type: "all",
+  metric: "all",
+  currency: "all",
+  status: "all",
+  search: ""
+};
+let lastCardModels = [];
+let managedUsers = [];
+let managedUserTeams = [];
+let userManagementBusy = false;
+const DASHBOARD_FILTERS = [
+  ["all", "All"],
+  ["teams", "Teams only"],
+  ["users", "Users only"],
+  ["revenue", "Revenue only"],
+  ["leads", "Leads only"],
+  ["usd", "USD only"],
+  ["inr", "INR only"]
+];
+
+function pad(n) { return n < 10 ? "0" + n : "" + n; }
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function monthKeyFromDate(dateStr) {
+  return dateStr.slice(0,7);
+}
+function parseISODate(dateStr) {
+  const parts = String(dateStr || "").split("-").map(Number);
+  if (parts.length !== 3 || parts.some(part => !Number.isFinite(part))) return null;
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+function dateToISO(date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+function formatDisplayDate(dateStr) {
+  const date = parseISODate(dateStr);
+  if (!date) return "dd-mm-yyyy";
+  return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()}`;
+}
+function monthLabel(key) {
+  const [y,m] = key.split("-");
+  const d = new Date(parseInt(y), parseInt(m)-1, 1);
+  return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+}
+function firstDateOfMonth(monthKey) {
+  return `${monthKey}-01`;
+}
+function addMonths(monthKey, offset) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const d = new Date(year, month - 1 + offset, 1);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+}
+function formatRevenue(value) {
+  return formatCurrencyValue(value, "USD");
+}
+function formatCurrencyValue(value, currency = "USD") {
+  const prefix = currency === "INR" ? "\u20B9" : "$";
+  return prefix + Number(value || 0).toLocaleString(undefined, {
+    maximumFractionDigits: 2
+  });
+}
+function formatUnitValue(value, unit = "USD") {
+  const amount = Number(value || 0);
+  if (unit === "USD") return formatRevenue(amount);
+  if (unit === "INR") return formatCurrencyValue(amount, "INR");
+  return `${amount.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${unit}`;
+}
+function userSalesType(user) {
+  return user && user.sales_type === "revenue" ? "revenue" : "leads";
+}
+function userCurrency(user) {
+  return CURRENCIES.includes(user && user.currency) ? user.currency : "USD";
+}
+function userUnitLabel(user) {
+  return userSalesType(user) === "revenue" ? userCurrency(user) : "Leads";
+}
+function formatUserValue(value, user) {
+  if (userSalesType(user) === "revenue") return formatCurrencyValue(value, userCurrency(user));
+  return formatUnitValue(value, "Leads");
+}
+function formatTeamValue(value, team) {
+  return formatMetricValue(value, teamMetricType(team), teamCurrency(team));
+}
+function teamMetricType(team) {
+  return team && team.metric_type === "leads" ? "leads" : "revenue";
+}
+function teamCurrency(team) {
+  return teamMetricType(team) === "revenue" ? (CURRENCIES.includes(team && team.currency) ? team.currency : "USD") : null;
+}
+function teamUnitLabel(team) {
+  return teamMetricType(team) === "revenue" ? teamCurrency(team) : "Leads";
+}
+function formatMetricValue(value, metricType, currency = "USD") {
+  if (metricType === "revenue") return `${formatCurrencyValue(value, currency)} ${currency}`;
+  return `${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} leads`;
+}
+function safePct(value, target) {
+  const t = Number(target || 0);
+  if (t <= 0) return 0;
+  return Math.max(0, (Number(value || 0) / t) * 100);
+}
+function clampPct(value) {
+  return Math.max(0, Math.min(100, Number(value || 0)));
+}
+function roundValue(value, metricType) {
+  const n = Number(value || 0);
+  return metricType === "leads" ? Math.round(n) : Math.round(n * 100) / 100;
+}
+function statusForProgress(progress, dailyProgress = progress) {
+  const p = Number(progress || 0);
+  if (p >= 120) return { label: "Top performer", color: "#facc15", key: "gold" };
+  if (p >= 85) return { label: p >= 100 ? "Completed" : "On target", color: "#22c55e", key: "green" };
+  if (p >= 60 || dailyProgress > 0) return { label: p >= 60 ? "Slightly below" : "Warning", color: "#facc15", key: "yellow" };
+  return { label: "No progress", color: "#ef4444", key: "red" };
+}
+function formatCalendarUnitValue(value, unit) {
+  const amount = Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return `${unit} ${amount}`;
+}
+function computeCalendarUnitTotals(teamEntries = {}, userEntries = {}) {
+  const totals = { USD: 0, INR: 0, Leads: 0 };
+  TEAMS.forEach(team => {
+    const value = teamEntries && teamEntries[team.id];
+    if (typeof value === "number") {
+      if (teamMetricType(team) === "leads") totals.Leads += value;
+      else totals[teamCurrency(team)] += value;
+    }
+  });
+  ENTRY_USERS.forEach(user => {
+    const value = userEntries && userEntries[user.id];
+    if (typeof value !== "number") return;
+    if (userSalesType(user) === "revenue") totals[userCurrency(user)] += value;
+    else totals.Leads += value;
+  });
+  return totals;
+}
+function renderCalendarUnitLines(totals) {
+  return ["USD", "INR", "Leads"]
+    .map(unit => `<span class="unit-${unit.toLowerCase()}">${escapeHTML(unit)} <b>${Number(totals[unit] || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</b></span>`)
+    .join("");
+}
+function calendarUnitSummaryText(totals) {
+  return ["USD", "INR", "Leads"]
+    .map(unit => formatCalendarUnitValue(totals[unit] || 0, unit))
+    .join(" | ");
+}
+function dashboardEntryUsers() {
+  return ENTRY_USERS.filter(user => Number(user.show_dashboard_card) === 1);
+}
+function listEntryUsers() {
+  return ENTRY_USERS.filter(user => Number(user.show_entry_list) === 1);
+}
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;"
+  }[ch]));
+}
+function isOwner() {
+  return authUser && authUser.role === "owner";
+}
+function canManageUsers() {
+  return isOwner() && editMode;
+}
+function canManageTeams() {
+  return isOwner() && editMode;
+}
+function canUseOwnerEditControls() {
+  return isOwner() && editMode;
+}
+function assignedTeamIds() {
+  return authUser && Array.isArray(authUser.team_ids) ? authUser.team_ids : [];
+}
+function canUpdateTeam(teamId) {
+  if (isOwner()) return editMode;
+  return assignedTeamIds().includes(teamId);
+}
+function canUpdateEntryUser(userId) {
+  if (isOwner()) return editMode;
+  return authUser && Number(authUser.id) === Number(userId);
+}
+function canRevokeTeam(teamId) {
+  return isOwner() || canUpdateTeam(teamId);
+}
+function canRevokeEntryUser(userId) {
+  return isOwner() || canUpdateEntryUser(userId);
+}
+function hasAnyDailyEntryAccess() {
+  if (isOwner()) return true;
+  return TEAMS.some(t => canUpdateTeam(t.id)) || ENTRY_USERS.some(u => canUpdateEntryUser(u.id));
+}
+function canSaveDailyEntries() {
+  return TEAMS.some(t => canUpdateTeam(t.id)) || ENTRY_USERS.some(u => canUpdateEntryUser(u.id));
+}
+function teamName(teamId) {
+  const team = TEAMS.find(t => t.id === teamId);
+  return team ? team.name : "";
+}
+function entryUserName(userId) {
+  const user = ENTRY_USERS.find(u => Number(u.id) === Number(userId));
+  return user ? user.name : "";
+}
+function roleLabel(role) {
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
+async function apiRequest(action, options = {}) {
+  const params = options.params || {};
+  const query = new URLSearchParams({ action, ...params });
+  const request = {
+    method: options.method || "GET",
+    headers: options.body ? { "Content-Type": "application/json" } : undefined,
+    body: options.body ? JSON.stringify(options.body) : undefined
+  };
+  const res = await fetch(`api.php?${query.toString()}`, request);
+  let data = {};
+  try {
+    data = await res.json();
+  } catch (e) {
+    data = { error: "Invalid server response" };
+  }
+  if (res.status === 401 && action !== "me" && action !== "login") {
+    showLogin();
+  }
+  if (!res.ok) {
+    throw new Error(data.error || "Request failed");
+  }
+  return data;
+}
+
+function showLogin() {
+  closeUserManagementDialogs();
+  authUser = null;
+  REVOKE_TEAMS = [];
+  REVOKE_USERS = [];
+  allRevokeData = {};
+  allRevokeUserData = {};
+  allData = {};
+  allUserData = {};
+  allAdjustments = {};
+  allUserAdjustments = {};
+  allLeaves = {};
+  editMode = false;
+  currentView = "home";
+  document.getElementById("appView").classList.add("hidden");
+  document.getElementById("loginView").classList.remove("hidden");
+  document.getElementById("teamPanel").classList.add("hidden");
+  document.getElementById("userPanel").classList.add("hidden");
+  document.getElementById("ratesPanel").classList.add("hidden");
+  positionManualUpdateNotice();
+}
+
+function updateModeUI() {
+  const editBtn = document.getElementById("editModeBtn");
+  const layout = document.getElementById("homeContent");
+  editBtn.classList.toggle("hidden", !isOwner());
+  editBtn.classList.add("mode-toggle");
+  editBtn.classList.toggle("active", editMode);
+  editBtn.setAttribute("aria-pressed", editMode ? "true" : "false");
+  editBtn.textContent = `Edit ${editMode ? "On" : "Off"}`;
+  if (layout) layout.classList.toggle("edit-mode-active", isOwner() && editMode);
+
+  document.getElementById("homeBtn").classList.toggle("hidden", currentView === "home");
+  document.getElementById("teamsBtn").classList.toggle("hidden", !canManageTeams());
+  document.getElementById("usersBtn").classList.toggle("hidden", !canManageUsers());
+  document.getElementById("ratesBtn").classList.toggle("hidden", !canManageTeams());
+  document.querySelectorAll(".owner-edit-control").forEach(el => {
+    el.classList.toggle("hidden", !canUseOwnerEditControls() || currentView !== "home");
+  });
+
+  if (!canManageTeams()) document.getElementById("teamPanel").classList.add("hidden");
+  if (!canManageUsers()) document.getElementById("userPanel").classList.add("hidden");
+  if (!canManageTeams()) document.getElementById("ratesPanel").classList.add("hidden");
+  document.getElementById("saveRow").classList.toggle("hidden", !canSaveDailyEntries() || currentView !== "home");
+  document.getElementById("readonlyNote").classList.toggle("hidden", canSaveDailyEntries() || currentView !== "home");
+  document.getElementById("readonlyNote").textContent = isOwner()
+    ? "Revoke is available for all rows. Turn Edit On to add entries."
+    : "Read-only access.";
+  positionManualUpdateNotice();
+}
+
+async function showApp(user) {
+  authUser = user;
+  editMode = false;
+  currentView = "home";
+  document.getElementById("loginView").classList.add("hidden");
+  document.getElementById("appView").classList.remove("hidden");
+  document.getElementById("currentUserName").textContent = user.display_name || user.username;
+  document.getElementById("currentUserRole").textContent = roleLabel(user.role);
+
+  await loadTeams();
+  await loadEntryUsers();
+  updateModeUI();
+  buildMonthOptions();
+  buildEntryTable();
+  buildUserSelects();
+
+  const dateInput = document.getElementById("entryDate");
+  dateInput.value = todayISO();
+
+  const monthKey = document.getElementById("monthSelect").value;
+  document.getElementById("loadingMsg").style.display = "inline";
+  await loadMonthData(monthKey);
+  document.getElementById("loadingMsg").style.display = "none";
+
+  loadEntryFieldsForDate();
+  renderAll();
+  await openRequestedManagementView();
+}
+
+function buildMonthOptions() {
+  const sel = document.getElementById("monthSelect");
+  sel.innerHTML = "";
+  const now = new Date();
+  for (let offset = -12; offset <= 6; offset++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    const key = `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+    ensureMonthOption(key);
+  }
+  sel.value = monthKeyFromDate(todayISO());
+}
+
+function ensureMonthOption(monthKey) {
+  const sel = document.getElementById("monthSelect");
+  if ([...sel.options].some(opt => opt.value === monthKey)) return;
+  const opt = document.createElement("option");
+  opt.value = monthKey;
+  opt.textContent = monthLabel(monthKey);
+  const options = [...sel.options, opt].sort((a, b) => a.value.localeCompare(b.value));
+  sel.innerHTML = "";
+  options.forEach(option => sel.appendChild(option));
+}
+
+async function loadTeams() {
+  const data = await apiRequest("teams", { params: isOwner() ? { include_inactive: 1 } : {} });
+  REVOKE_TEAMS = (data.rows || []).map(team => ({
+    id: team.id,
+    name: team.name,
+    unit: team.unit || "USD",
+    metric_type: team.metric_type || (team.unit === "leads" ? "leads" : "revenue"),
+    currency: team.currency || (["USD", "INR"].includes(team.unit) ? team.unit : "USD"),
+    progress_mode: team.progress_mode || "monthly",
+    target: Number(team.target || 0),
+    is_active: Number(team.is_active),
+    position: Number(team.position || 0)
+  }));
+  TEAMS = REVOKE_TEAMS.filter(team => team.is_active === 1);
+}
+
+async function loadEntryUsers() {
+  const data = await apiRequest("entry_users", { params: isOwner() ? { include_inactive: 1 } : {} });
+  REVOKE_USERS = (data.rows || []).map(user => ({
+    id: Number(user.id),
+    username: user.username,
+    name: user.display_name || user.username,
+    role: user.role,
+    team_ids: Array.isArray(user.team_ids) ? user.team_ids : [],
+    unit: user.unit || "leads",
+    currency: user.currency || (["USD", "INR"].includes(user.unit) ? user.unit : "USD"),
+    sales_type: user.sales_type || (["USD", "INR"].includes(user.unit) ? "revenue" : "leads"),
+    target: Number(user.target || 0),
+    show_dashboard_card: Number(user.show_dashboard_card ?? 0),
+    show_entry_list: Number(user.show_entry_list ?? 1),
+    is_active: Number(user.is_active),
+    deleted_at: user.deleted_at || null
+  }));
+  ENTRY_USERS = REVOKE_USERS.filter(user => user.is_active === 1 && !user.deleted_at);
+}
+
+function buildEntryTable() {
+  const body = document.getElementById("entryBody");
+  body.innerHTML = "";
+  const dailyTeams = isOwner() ? REVOKE_TEAMS : TEAMS.filter(t => canUpdateTeam(t.id));
+  const visibleUsers = listEntryUsers();
+  const dailyUsers = isOwner() ? REVOKE_USERS : visibleUsers.filter(u => canUpdateEntryUser(u.id));
+  if (dailyTeams.length === 0 && dailyUsers.length === 0) {
+    body.innerHTML = `<tr><td colspan="5" class="empty-note">No assigned teams or user entries.</td></tr>`;
+    return;
+  }
+  dailyTeams.forEach(t => {
+    const canUpdate = canUpdateTeam(t.id) && t.is_active === 1;
+    const canRevoke = canRevokeTeam(t.id);
+    const tr = document.createElement("tr");
+    tr.className = "entry-team";
+    tr.innerHTML = `
+      <td><div class="entry-name"><strong>${escapeHTML(t.name)}</strong><span class="entry-kind">Team${t.is_active === 1 ? "" : " · Inactive"}</span></div></td>
+      <td class="unit-cell">${escapeHTML(teamUnitLabel(t))}</td>
+      <td class="current-cell" id="entry_current_team_${t.id}">${formatTeamValue(0, t)}</td>
+      <td><input type="number" min="0" step="any" class="entry" id="entry_team_${t.id}" value="0" placeholder="0" ${canUpdate ? "" : "disabled"}></td>
+      <td class="action-cell">
+        <input type="number" min="0" step="any" class="entry" id="revoke_team_${t.id}" value="0" placeholder="0" ${canRevoke ? "" : "disabled"}>
+        ${canRevoke ? `<button type="button" class="danger" data-row-revoke-team="${t.id}">Revoke</button>` : ""}
+      </td>
+    `;
+    body.appendChild(tr);
+  });
+  dailyUsers.forEach(u => {
+    const canUpdate = canUpdateEntryUser(u.id) && u.is_active === 1 && !u.deleted_at && u.show_entry_list === 1;
+    const canRevoke = canRevokeEntryUser(u.id);
+    const tr = document.createElement("tr");
+    tr.className = "entry-user";
+    tr.innerHTML = `
+      <td><div class="entry-name"><strong>${escapeHTML(u.name)}</strong><span class="entry-kind">User${u.deleted_at ? " · Deleted" : u.is_active !== 1 ? " · Inactive" : u.show_entry_list !== 1 ? " · Revoke only" : ""}</span></div></td>
+      <td class="unit-cell">${escapeHTML(userUnitLabel(u))}</td>
+      <td class="current-cell" id="entry_current_user_${u.id}">${formatUserValue(0, u)}</td>
+      <td><input type="number" min="0" step="any" class="entry" id="entry_user_${u.id}" value="0" placeholder="0" ${canUpdate ? "" : "disabled"}></td>
+      <td class="action-cell">
+        <input type="number" min="0" step="any" class="entry" id="revoke_user_${u.id}" value="0" placeholder="0" ${canRevoke ? "" : "disabled"}>
+        ${canRevoke ? `<button type="button" class="danger" data-row-revoke-user="${u.id}">Revoke</button>` : ""}
+      </td>
+    `;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll("[data-row-revoke-team]").forEach(btn => {
+    btn.addEventListener("click", () => handleRowRevokeTeam(btn.dataset.rowRevokeTeam));
+  });
+  body.querySelectorAll("[data-row-revoke-user]").forEach(btn => {
+    btn.addEventListener("click", () => handleRowRevokeUser(btn.dataset.rowRevokeUser));
+  });
+}
+
+function buildRoleOptions(selected = "employee") {
+  return ROLES.map(role => `<option value="${role}" ${role === selected ? "selected" : ""}>${roleLabel(role)}</option>`).join("");
+}
+
+function buildCurrencyOptions(selected = "USD") {
+  return CURRENCIES.map(currency => `<option value="${currency}" ${currency === selected ? "selected" : ""}>${currency}</option>`).join("");
+}
+
+function buildSalesTypeOptions(selected = "leads") {
+  return SALES_TYPES.map(type => `<option value="${type.value}" ${type.value === selected ? "selected" : ""}>${type.label}</option>`).join("");
+}
+
+function buildProgressModeOptions(selected = "monthly") {
+  return ["daily", "monthly"].map(mode => `<option value="${mode}" ${mode === selected ? "selected" : ""}>${mode.charAt(0).toUpperCase() + mode.slice(1)} mode</option>`).join("");
+}
+
+function buildTeamOptions(selected = []) {
+  const selectedIds = Array.isArray(selected) ? selected : (selected ? [selected] : []);
+  return TEAMS.map(team => (
+    `<option value="${team.id}" ${selectedIds.includes(team.id) ? "selected" : ""}>${escapeHTML(team.name)}</option>`
+  )).join("");
+}
+
+function buildTeamCheckboxes(name, selected = [], teams = TEAMS) {
+  const selectedIds = Array.isArray(selected) ? selected : (selected ? [selected] : []);
+  if (teams.length === 0) {
+    return `<div class="team-checks-empty">No active teams</div>`;
+  }
+  return teams.map(team => `
+    <label>
+      <input type="checkbox" name="${name}" value="${team.id}" ${selectedIds.includes(team.id) ? "checked" : ""}>
+      <span>${escapeHTML(team.name)}${Number(team.is_active) === 0 ? " (Inactive)" : ""}</span>
+    </label>
+  `).join("");
+}
+
+function buildTeamDropdown(name, selected = [], teams = TEAMS) {
+  const selectedIds = Array.isArray(selected) ? selected : (selected ? [selected] : []);
+  const count = selectedIds.length;
+  const label = count ? `${count} team${count !== 1 ? "s" : ""} selected` : "Select teams";
+  return `
+    <details class="team-dropdown">
+      <summary>${escapeHTML(label)}</summary>
+      <div class="team-checks">${buildTeamCheckboxes(name, selectedIds, teams)}</div>
+    </details>
+  `;
+}
+
+function readCheckedTeams(container) {
+  return [...container.querySelectorAll('input[type="checkbox"]:checked')].map(input => input.value);
+}
+
+function buildUserSelects() {
+  document.getElementById("newRole").innerHTML = buildRoleOptions("employee");
+  document.getElementById("newUserCurrency").innerHTML = buildCurrencyOptions("USD");
+  document.getElementById("newUserSalesType").innerHTML = buildSalesTypeOptions("leads");
+  document.getElementById("newTeamMetricType").innerHTML = buildSalesTypeOptions("revenue");
+  document.getElementById("newTeamCurrency").innerHTML = buildCurrencyOptions("USD");
+  document.getElementById("newTeamProgressMode").innerHTML = buildProgressModeOptions("monthly");
+  document.getElementById("newTeamChecks").innerHTML = buildTeamDropdown("new_team_ids", []);
+}
+
+function bindMetricCurrencyToggle(metricSelectId, currencySelectId) {
+  const metric = document.getElementById(metricSelectId);
+  const currency = document.getElementById(currencySelectId);
+  if (!metric || !currency) return;
+  const update = () => { currency.disabled = metric.value === "leads"; };
+  metric.addEventListener("change", update);
+  update();
+}
+
+async function loadMonthData(monthKey) {
+  const data = await apiRequest("month", { params: { month: monthKey } });
+  const monthObj = {};
+  const revokeMonthObj = {};
+  (data.rows || []).forEach(row => {
+    if (isOwner()) {
+      if (!revokeMonthObj[row.entry_date]) revokeMonthObj[row.entry_date] = {};
+      revokeMonthObj[row.entry_date][row.team_id] = parseFloat(row.amount);
+    }
+    if (!TEAMS.some(t => t.id === row.team_id)) return;
+    if (!monthObj[row.entry_date]) monthObj[row.entry_date] = {};
+    monthObj[row.entry_date][row.team_id] = parseFloat(row.amount);
+  });
+  allData[monthKey] = monthObj;
+  allRevokeData[monthKey] = revokeMonthObj;
+  const userMonthObj = {};
+  const revokeUserMonthObj = {};
+  (data.user_rows || []).forEach(row => {
+    if (isOwner()) {
+      if (!revokeUserMonthObj[row.entry_date]) revokeUserMonthObj[row.entry_date] = {};
+      revokeUserMonthObj[row.entry_date][Number(row.entry_user_id)] = parseFloat(row.amount);
+    }
+    if (!ENTRY_USERS.some(u => Number(u.id) === Number(row.entry_user_id))) return;
+    if (!userMonthObj[row.entry_date]) userMonthObj[row.entry_date] = {};
+    userMonthObj[row.entry_date][Number(row.entry_user_id)] = parseFloat(row.amount);
+  });
+  allUserData[monthKey] = userMonthObj;
+  allRevokeUserData[monthKey] = revokeUserMonthObj;
+  allAdjustments[monthKey] = data.adjustments || [];
+  allUserAdjustments[monthKey] = data.user_adjustments || [];
+  const leaves = {};
+  (data.leaves || []).forEach(row => {
+    leaves[row.entry_date] = row;
+  });
+  allLeaves[monthKey] = leaves;
+}
+
+async function saveTeamEntry(teamId, dateStr, amount) {
+  return apiRequest("save", {
+    method: "POST",
+    body: { team_id: teamId, date: dateStr, amount: amount, note: "Daily addition" }
+  });
+}
+
+async function saveUserEntry(userId, dateStr, amount) {
+  return apiRequest("user_entry_save", {
+    method: "POST",
+    body: { entry_user_id: userId, date: dateStr, amount: amount, note: "Daily addition" }
+  });
+}
+
+async function revokeTeamEntry(teamId, dateStr, amount) {
+  return apiRequest("revoke", {
+    method: "POST",
+    body: { team_id: teamId, date: dateStr, amount: amount, note: "Manual correction" }
+  });
+}
+
+async function revokeUserEntry(userId, dateStr, amount) {
+  return apiRequest("user_entry_revoke", {
+    method: "POST",
+    body: { entry_user_id: userId, date: dateStr, amount: amount, note: "Manual correction" }
+  });
+}
+
+function computeMonthTotals(monthKey) {
+  const totals = {};
+  TEAMS.forEach(t => totals[t.id] = 0);
+  const monthObj = allData[monthKey] || {};
+  Object.values(monthObj).forEach(dayEntries => {
+    TEAMS.forEach(t => {
+      const v = dayEntries[t.id];
+      if (typeof v === "number") totals[t.id] += v;
+    });
+  });
+  return totals;
+}
+
+function computeUserMonthTotals(monthKey) {
+  const totals = {};
+  ENTRY_USERS.forEach(u => totals[u.id] = 0);
+  const monthObj = allUserData[monthKey] || {};
+  Object.values(monthObj).forEach(dayEntries => {
+    ENTRY_USERS.forEach(u => {
+      const v = dayEntries[u.id];
+      if (typeof v === "number") totals[u.id] += v;
+    });
+  });
+  return totals;
+}
+
+function computeDaySummary(entries) {
+  let revenue = 0;
+  let logged = 0;
+  TEAMS.forEach(t => {
+    const value = entries && entries[t.id];
+    if (typeof value === "number") {
+      logged++;
+      revenue += value;
+    }
+  });
+  return { revenue, logged };
+}
+
+function computeUserDaySummary(entries) {
+  let count = 0;
+  let logged = 0;
+  ENTRY_USERS.forEach(u => {
+    const value = entries && entries[u.id];
+    if (typeof value === "number") {
+      logged++;
+      count += value;
+    }
+  });
+  return { count, logged };
+}
+
+function getRecentDailyValues(monthKey, teamId, days = 7) {
+  const monthObj = allData[monthKey] || {};
+  return Object.keys(monthObj).sort().slice(-days).map(date => Number(monthObj[date][teamId] || 0));
+}
+
+function getRecentUserDailyValues(monthKey, userId, days = 7) {
+  const monthObj = allUserData[monthKey] || {};
+  return Object.keys(monthObj).sort().slice(-days).map(date => Number(monthObj[date][userId] || 0));
+}
+
+function optionHTML(value, label, selectedValue) {
+  return `<option value="${escapeHTML(value)}" ${selectedValue === value ? "selected" : ""}>${escapeHTML(label)}</option>`;
+}
+
+function resetDashboardFilters() {
+  dashboardFilters = {
+    rangeFrom: "",
+    rangeTo: "",
+    type: "all",
+    metric: "all",
+    currency: "all",
+    status: "all",
+    search: ""
+  };
+  activeDashboardFilter = "all";
+}
+
+function setDashboardPreset(key) {
+  activeDashboardFilter = key;
+  dashboardFilters.type = "all";
+  dashboardFilters.metric = "all";
+  dashboardFilters.currency = "all";
+  if (key === "all") return;
+  if (key === "teams" || key === "users") dashboardFilters.type = key.slice(0, -1);
+  if (key === "revenue" || key === "leads") dashboardFilters.metric = key;
+  if (key === "usd" || key === "inr") {
+    dashboardFilters.metric = "revenue";
+    dashboardFilters.currency = key.toUpperCase();
+  }
+}
+
+function updateDashboardFilterState(field, value) {
+  dashboardFilters[field] = value;
+  activeDashboardFilter = "custom";
+  renderCards();
+}
+
+let activeDatePickerInput = null;
+let datePickerView = null;
+
+function refreshDateDisplays(root = document) {
+  root.querySelectorAll(".date-field").forEach(field => {
+    const input = field.querySelector("input.date-native");
+    const label = field.querySelector("[data-date-display]");
+    if (input && label) label.textContent = formatDisplayDate(input.value);
+  });
+}
+
+function enhanceDateInputs(root = document) {
+  root.querySelectorAll('input[type="date"]:not([data-date-enhanced])').forEach(input => {
+    input.dataset.dateEnhanced = "true";
+    input.classList.add("date-native");
+    const field = document.createElement("div");
+    field.className = "date-field";
+    input.parentNode.insertBefore(field, input);
+    field.appendChild(input);
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "date-trigger";
+    trigger.setAttribute("aria-haspopup", "dialog");
+    trigger.setAttribute("aria-label", input.id ? `Choose date for ${input.id}` : "Choose date");
+    trigger.innerHTML = `<span data-date-display>${formatDisplayDate(input.value)}</span><span class="date-trigger-icon">cal</span>`;
+    field.appendChild(trigger);
+    trigger.addEventListener("click", event => {
+      event.preventDefault();
+      openDatePicker(input);
+    });
+    input.addEventListener("input", () => refreshDateDisplays(field));
+    input.addEventListener("change", () => refreshDateDisplays(field));
+  });
+  refreshDateDisplays(root);
+}
+
+function closeDatePicker() {
+  document.querySelectorAll(".date-trigger.active").forEach(btn => btn.classList.remove("active"));
+  document.getElementById("datePicker")?.remove();
+  activeDatePickerInput = null;
+  datePickerView = null;
+}
+
+function setDateInputValue(input, value) {
+  input.value = value;
+  refreshDateDisplays(input.closest(".date-field") || document);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function clampPickerView(date, input) {
+  const min = parseISODate(input.min);
+  const max = parseISODate(input.max);
+  if (min && date < new Date(min.getFullYear(), min.getMonth(), 1)) return new Date(min.getFullYear(), min.getMonth(), 1);
+  if (max && date > new Date(max.getFullYear(), max.getMonth(), 1)) return new Date(max.getFullYear(), max.getMonth(), 1);
+  return date;
+}
+
+function renderDatePicker() {
+  if (!activeDatePickerInput || !datePickerView) return;
+  const picker = document.getElementById("datePicker");
+  if (!picker) return;
+  const input = activeDatePickerInput;
+  const selected = parseISODate(input.value);
+  const today = parseISODate(todayISO());
+  const min = parseISODate(input.min);
+  const max = parseISODate(input.max);
+  const year = datePickerView.getFullYear();
+  const month = datePickerView.getMonth();
+  const start = new Date(year, month, 1);
+  const gridStart = new Date(year, month, 1 - start.getDay());
+  const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  const monthOptions = Array.from({ length: 12 }, (_, index) => {
+    const label = new Date(year, index, 1).toLocaleString(undefined, { month: "long" });
+    return `<option value="${index}" ${index === month ? "selected" : ""}>${escapeHTML(label)}</option>`;
+  }).join("");
+  const minYear = min ? min.getFullYear() : year - 10;
+  const maxYear = max ? max.getFullYear() : year + 10;
+  const yearOptions = Array.from({ length: maxYear - minYear + 1 }, (_, index) => {
+    const optionYear = minYear + index;
+    return `<option value="${optionYear}" ${optionYear === year ? "selected" : ""}>${optionYear}</option>`;
+  }).join("");
+  const dayButtons = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index);
+    const iso = dateToISO(date);
+    const disabled = (min && date < min) || (max && date > max);
+    const classes = [
+      "date-picker-day",
+      date.getMonth() !== month ? "muted" : "",
+      selected && iso === dateToISO(selected) ? "selected" : "",
+      today && iso === dateToISO(today) ? "today" : ""
+    ].filter(Boolean).join(" ");
+    return `<button type="button" class="${classes}" data-picker-date="${iso}" ${disabled ? "disabled" : ""}>${date.getDate()}</button>`;
+  }).join("");
+
+  picker.innerHTML = `
+    <div class="date-picker-top">
+      <div class="date-picker-controls">
+        <select data-picker-view-month aria-label="Month">${monthOptions}</select>
+        <select data-picker-view-year aria-label="Year">${yearOptions}</select>
+      </div>
+      <div class="date-picker-nav">
+        <button type="button" data-picker-month="-1" aria-label="Previous month">&lt;</button>
+        <button type="button" data-picker-month="1" aria-label="Next month">&gt;</button>
+      </div>
+    </div>
+    <div class="date-picker-grid">
+      ${weekdays.map(day => `<div class="date-picker-weekday">${day}</div>`).join("")}
+      ${dayButtons}
+    </div>
+    <div class="date-picker-footer">
+      <button type="button" data-picker-clear>Clear</button>
+      <button type="button" data-picker-today>Today</button>
+    </div>
+  `;
+
+  picker.querySelectorAll("[data-picker-month]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      datePickerView = clampPickerView(new Date(year, month + Number(btn.dataset.pickerMonth), 1), input);
+      renderDatePicker();
+    });
+  });
+  picker.querySelector("[data-picker-view-month]").addEventListener("change", e => {
+    datePickerView = clampPickerView(new Date(year, Number(e.target.value), 1), input);
+    renderDatePicker();
+  });
+  picker.querySelector("[data-picker-view-year]").addEventListener("change", e => {
+    datePickerView = clampPickerView(new Date(Number(e.target.value), month, 1), input);
+    renderDatePicker();
+  });
+  picker.querySelectorAll("[data-picker-date]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      setDateInputValue(input, btn.dataset.pickerDate);
+      closeDatePicker();
+    });
+  });
+  picker.querySelector("[data-picker-clear]").addEventListener("click", () => {
+    setDateInputValue(input, "");
+    closeDatePicker();
+  });
+  picker.querySelector("[data-picker-today]").addEventListener("click", () => {
+    const todayValue = todayISO();
+    const todayDate = parseISODate(todayValue);
+    if ((min && todayDate < min) || (max && todayDate > max)) return;
+    setDateInputValue(input, todayValue);
+    closeDatePicker();
+  });
+}
+
+function positionDatePicker(input, picker) {
+  const field = input.closest(".date-field");
+  const rect = field.getBoundingClientRect();
+  const width = Math.min(300, window.innerWidth - 12);
+  const left = Math.max(6, Math.min(rect.left, window.innerWidth - width - 6));
+  const below = rect.bottom + 6;
+  const above = rect.top - picker.offsetHeight - 6;
+  picker.style.width = `${width}px`;
+  picker.style.left = `${left}px`;
+  picker.style.top = `${below + picker.offsetHeight <= window.innerHeight - 6 ? below : Math.max(6, above)}px`;
+}
+
+function openDatePicker(input) {
+  if (activeDatePickerInput === input) {
+    closeDatePicker();
+    return;
+  }
+  closeDatePicker();
+  activeDatePickerInput = input;
+  const baseDate = parseISODate(input.value) || parseISODate(input.min) || parseISODate(todayISO());
+  datePickerView = clampPickerView(new Date(baseDate.getFullYear(), baseDate.getMonth(), 1), input);
+  const picker = document.createElement("div");
+  picker.id = "datePicker";
+  picker.className = "date-picker";
+  picker.setAttribute("role", "dialog");
+  picker.setAttribute("aria-label", "Choose date");
+  document.body.appendChild(picker);
+  input.closest(".date-field")?.querySelector(".date-trigger")?.classList.add("active");
+  renderDatePicker();
+  positionDatePicker(input, picker);
+}
+
+function buildDashboardFilters() {
+  const monthKey = document.getElementById("monthSelect").value || monthKeyFromDate(todayISO());
+  const panel = document.getElementById("dashboardFilterPanel");
+  panel.innerHTML = `
+    <div class="filter-field">
+      <label for="filterFromDate">From date</label>
+      <input type="date" id="filterFromDate" value="${escapeHTML(dashboardFilters.rangeFrom)}">
+    </div>
+    <div class="filter-field">
+      <label for="filterToDate">To date</label>
+      <input type="date" id="filterToDate" value="${escapeHTML(dashboardFilters.rangeTo)}">
+    </div>
+    <div class="filter-field">
+      <label for="filterType">Type</label>
+      <select id="filterType">
+        ${optionHTML("all", "All cards", dashboardFilters.type)}
+        ${optionHTML("team", "Teams", dashboardFilters.type)}
+        ${optionHTML("user", "Users", dashboardFilters.type)}
+      </select>
+    </div>
+    <div class="filter-field">
+      <label for="filterMetric">Metric</label>
+      <select id="filterMetric">
+        ${optionHTML("all", "All metrics", dashboardFilters.metric)}
+        ${optionHTML("revenue", "Revenue", dashboardFilters.metric)}
+        ${optionHTML("leads", "Leads", dashboardFilters.metric)}
+      </select>
+    </div>
+    <div class="filter-field">
+      <label for="filterCurrency">Currency</label>
+      <select id="filterCurrency">
+        ${optionHTML("all", "All currencies", dashboardFilters.currency)}
+        ${optionHTML("USD", "USD", dashboardFilters.currency)}
+        ${optionHTML("INR", "INR", dashboardFilters.currency)}
+      </select>
+    </div>
+    <div class="filter-field">
+      <label for="filterStatus">Progress</label>
+      <select id="filterStatus">
+        ${optionHTML("all", "All progress", dashboardFilters.status)}
+        ${optionHTML("green", "On target", dashboardFilters.status)}
+        ${optionHTML("yellow", "Slightly below", dashboardFilters.status)}
+        ${optionHTML("red", "No progress", dashboardFilters.status)}
+        ${optionHTML("gold", "Top performer", dashboardFilters.status)}
+      </select>
+    </div>
+    <div class="filter-field">
+      <label for="filterSearch">Search</label>
+      <input type="text" id="filterSearch" value="${escapeHTML(dashboardFilters.search)}" placeholder="Team or user">
+    </div>
+    <div class="filter-field">
+      <label>&nbsp;</label>
+      <button type="button" class="secondary" id="clearDashboardFilters">Clear filters</button>
+    </div>
+  `;
+  [
+    ["filterFromDate", "rangeFrom"],
+    ["filterToDate", "rangeTo"],
+    ["filterType", "type"],
+    ["filterMetric", "metric"],
+    ["filterCurrency", "currency"],
+    ["filterStatus", "status"],
+    ["filterSearch", "search"]
+  ].forEach(([id, field]) => {
+    const input = document.getElementById(id);
+    input.addEventListener("input", () => updateDashboardFilterState(field, input.value));
+    input.addEventListener("change", () => updateDashboardFilterState(field, input.value));
+  });
+  enhanceDateInputs(panel);
+  document.getElementById("clearDashboardFilters").addEventListener("click", () => {
+    resetDashboardFilters();
+    buildDashboardFilters();
+    renderCards();
+  });
+
+  const container = document.getElementById("dashboardFilters");
+  container.innerHTML = DASHBOARD_FILTERS.map(([key, label]) =>
+    `<button type="button" class="filter-chip ${activeDashboardFilter === key ? "active" : ""}" data-dashboard-filter="${key}">${label}</button>`
+  ).join("");
+  container.querySelectorAll("[data-dashboard-filter]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      setDashboardPreset(btn.dataset.dashboardFilter);
+      buildDashboardFilters();
+      renderCards();
+    });
+  });
+}
+
+function selectedDayNumber(dateStr) {
+  const parts = String(dateStr || "").split("-").map(Number);
+  return parts.length === 3 ? parts[2] : 1;
+}
+
+function dateForMonthDay(monthKey, day) {
+  return `${monthKey}-${pad(day)}`;
+}
+
+function dayFromDateInMonth(dateStr, monthKey) {
+  if (!dateStr || monthKeyFromDate(dateStr) !== monthKey) return null;
+  const day = selectedDayNumber(dateStr);
+  return Number.isFinite(day) ? day : null;
+}
+
+function dashboardDateRange(monthKey, dateStr, daysInMonth) {
+  const selectedDay = Math.min(Math.max(selectedDayNumber(dateStr), 1), daysInMonth);
+  const isCustom = !!(dashboardFilters.rangeFrom || dashboardFilters.rangeTo);
+  let startDay = 1;
+  let endDay = selectedDay;
+
+  if (isCustom) {
+    const [year, month] = monthKey.split("-").map(Number);
+    const monthStart = new Date(year, month - 1, 1);
+    const monthEnd = new Date(year, month - 1, daysInMonth);
+    let from = parseISODate(dashboardFilters.rangeFrom) || monthStart;
+    let to = parseISODate(dashboardFilters.rangeTo) || parseISODate(dateStr) || monthEnd;
+    if (from > to) [from, to] = [to, from];
+    const rangeStart = from < monthStart ? monthStart : from;
+    const rangeEnd = to > monthEnd ? monthEnd : to;
+    if (rangeStart <= rangeEnd) {
+      startDay = rangeStart.getDate();
+      endDay = rangeEnd.getDate();
+    } else {
+      startDay = 1;
+      endDay = 0;
+    }
+  }
+
+  return {
+    startDay,
+    endDay,
+    dayCount: Math.max(0, endDay - startDay + 1),
+    isCustom,
+    label: isCustom ? "Range actual" : "Month-to-date actual",
+    expectedLabel: isCustom ? "Expected for range" : "Expected to date"
+  };
+}
+
+function assignedTeamsForUser(user, metricType, currency) {
+  const ids = Array.isArray(user.team_ids) ? user.team_ids : [];
+  const assigned = TEAMS.filter(team => ids.includes(team.id));
+  const matching = assigned.filter(team => {
+    if (teamMetricType(team) !== metricType) return false;
+    return metricType === "leads" || teamCurrency(team) === currency;
+  });
+  return matching.length ? matching : assigned;
+}
+
+function userUsesAssignedTeamTotals(user) {
+  return ["manager", "owner"].includes(user.role) && Array.isArray(user.team_ids) && user.team_ids.length > 0;
+}
+
+function userBelongsToTeam(user, teamId) {
+  return Array.isArray(user.team_ids) && user.team_ids.map(String).includes(String(teamId));
+}
+
+function userMatchesTeamMetric(user, team) {
+  const metricType = team.metricType || teamMetricType(team);
+  const currency = metricType === "revenue" ? (team.currency || teamCurrency(team)) : null;
+  if (userSalesType(user) !== metricType) return false;
+  return metricType === "leads" || userCurrency(user) === currency;
+}
+
+function usersAssignedToTeamMetric(team) {
+  return ENTRY_USERS.filter(user => userBelongsToTeam(user, team.id) && userMatchesTeamMetric(user, team));
+}
+
+function assignedUserValueForTeamDate(team, dateStr) {
+  const userDayEntries = (allUserData[monthKeyFromDate(dateStr)] || {})[dateStr] || {};
+  return usersAssignedToTeamMetric(team).reduce((sum, user) => sum + Number(userDayEntries[user.id] || 0), 0);
+}
+
+function teamTotalForDate(team, dateStr) {
+  const dayEntries = (allData[monthKeyFromDate(dateStr)] || {})[dateStr] || {};
+  return Number(dayEntries[team.id] || 0) + assignedUserValueForTeamDate(team, dateStr);
+}
+
+function buildSeriesForTeam(team, monthKey, daysInMonth) {
+  return Array.from({ length: daysInMonth }, (_, index) => {
+    const date = dateForMonthDay(monthKey, index + 1);
+    return teamTotalForDate(team, date);
+  });
+}
+
+function buildSeriesForUser(user, monthKey, daysInMonth, sourceTeams = []) {
+  const userMonthObj = allUserData[monthKey] || {};
+  if (sourceTeams.length) {
+    return Array.from({ length: daysInMonth }, (_, index) => {
+      const date = dateForMonthDay(monthKey, index + 1);
+      return sourceTeams.reduce((sum, team) => sum + teamTotalForDate(team, date), 0);
+    });
+  }
+  return Array.from({ length: daysInMonth }, (_, index) => Number((userMonthObj[dateForMonthDay(monthKey, index + 1)] || {})[user.id] || 0));
+}
+
+function buildCardModel(base, ownerType, monthKey, dateStr, daysInMonth) {
+  const metricType = ownerType === "team" ? teamMetricType(base) : userSalesType(base);
+  const currency = metricType === "revenue" ? (ownerType === "team" ? teamCurrency(base) : userCurrency(base)) : null;
+  const dayNo = Math.min(Math.max(selectedDayNumber(dateStr), 1), daysInMonth);
+  const range = dashboardDateRange(monthKey, dateStr, daysInMonth);
+  let target = Math.max(Number(base.target || 0), 0);
+  let progressMode = ownerType === "team" ? (base.progress_mode || "monthly") : "daily";
+  let sourceTeams = [];
+
+  if (ownerType === "user" && userUsesAssignedTeamTotals(base)) {
+    sourceTeams = assignedTeamsForUser(base, metricType, currency);
+    if (sourceTeams.length) {
+      target = sourceTeams.reduce((sum, team) => sum + Number(team.target || 0), 0);
+      progressMode = sourceTeams.length === 1 ? (sourceTeams[0].progress_mode || "daily") : "daily";
+    }
+  } else if (ownerType === "user" && Array.isArray(base.team_ids) && base.team_ids.length === 1) {
+    const team = TEAMS.find(t => t.id === base.team_ids[0]);
+    if (team) progressMode = team.progress_mode || "daily";
+  }
+
+  const series = ownerType === "team"
+    ? buildSeriesForTeam(base, monthKey, daysInMonth)
+    : buildSeriesForUser(base, monthKey, daysInMonth, sourceTeams);
+  const selectedDayActual = series[dayNo - 1] || 0;
+  const monthToDateActual = series.slice(range.startDay - 1, range.endDay).reduce((sum, value) => sum + Number(value || 0), 0);
+  const dailyTarget = target > 0 ? target / daysInMonth : 0;
+  const expectedTillDate = dailyTarget * range.dayCount;
+  const variance = monthToDateActual - expectedTillDate;
+  const dailyProgress = safePct(selectedDayActual, dailyTarget);
+  const periodProgress = safePct(monthToDateActual, expectedTillDate);
+  const monthlyProgress = range.isCustom ? periodProgress : safePct(monthToDateActual, target);
+  const ringProgress = progressMode === "daily" && !range.isCustom ? dailyProgress : monthlyProgress;
+  const remainingTarget = Math.max(0, target - monthToDateActual);
+  const remainingDays = Math.max(0, daysInMonth - range.endDay);
+  const avgPerDay = range.dayCount > 0 ? monthToDateActual / range.dayCount : 0;
+  const requiredAvg = remainingDays > 0 ? remainingTarget / remainingDays : 0;
+  const indexed = series.map((value, index) => ({ day: index + 1, value: Number(value || 0) }));
+  const rangeIndexed = indexed.slice(range.startDay - 1, range.endDay);
+  const nonZero = rangeIndexed.filter(item => item.value > 0);
+  const best = nonZero.length ? nonZero.reduce((a, b) => b.value > a.value ? b : a) : { day: "-", value: 0 };
+  const worst = nonZero.length ? nonZero.reduce((a, b) => b.value < a.value ? b : a) : { day: "-", value: 0 };
+  const last7 = series.slice(Math.max(0, dayNo - 7), dayNo).reduce((sum, value) => sum + Number(value || 0), 0);
+  const recent3 = series.slice(Math.max(0, dayNo - 3), dayNo).reduce((sum, value) => sum + Number(value || 0), 0) / 3;
+  const prev3 = series.slice(Math.max(0, dayNo - 6), Math.max(0, dayNo - 3)).reduce((sum, value) => sum + Number(value || 0), 0) / 3;
+  const trend = recent3 > prev3 * 1.08 ? "improving" : (recent3 < prev3 * 0.92 ? "dropping" : "stable");
+  const status = statusForProgress(monthlyProgress, dailyProgress);
+
+  return {
+    key: `${ownerType}:${base.id}`,
+    id: base.id,
+    ownerType,
+    name: base.name,
+    metricType,
+    currency,
+    target,
+    progressMode,
+    sourceTeams,
+    series,
+    range,
+    selectedDayActual,
+    monthToDateActual,
+    dailyTarget,
+    expectedTillDate,
+    variance,
+    dailyProgress,
+    monthlyProgress,
+    ringProgress,
+    remainingTarget,
+    avgPerDay,
+    requiredAvg,
+    best,
+    worst,
+    last7,
+    trend,
+    status
+  };
+}
+
+function buildCardModels(monthKey, dateStr) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const teamCards = TEAMS.map(team => buildCardModel(team, "team", monthKey, dateStr, daysInMonth));
+  const userCards = dashboardEntryUsers().map(user => buildCardModel(user, "user", monthKey, dateStr, daysInMonth));
+  return [...teamCards, ...userCards];
+}
+
+function cardPassesFilter(card) {
+  const filters = dashboardFilters;
+  const search = filters.search.trim().toLowerCase();
+  if (filters.type !== "all" && card.ownerType !== filters.type) return false;
+  if (filters.metric !== "all" && card.metricType !== filters.metric) return false;
+  if (filters.currency !== "all" && card.currency !== filters.currency) return false;
+  if (filters.status !== "all" && card.status.key !== filters.status) return false;
+  if (search && !card.name.toLowerCase().includes(search)) return false;
+  return true;
+}
+
+function renderProgressBar(label, pct, color) {
+  return `
+    <div class="mini-metric">
+      <span>${label}</span>
+      <b>${Number(pct || 0).toFixed(0)}%</b>
+      <div class="bar-bg"><div class="bar-fill" style="width:${clampPct(pct)}%; background:${color};"></div></div>
+    </div>
+  `;
+}
+
+function cardAccentPalette(model) {
+  if (model.status.key === "gold") return ["#facc15", "#fde68a"];
+  if (model.status.key === "green") return ["#22c55e", "#86efac"];
+  if (model.status.key === "yellow") return ["#facc15", "#f97316"];
+  return ["#ef4444", "#f87171"];
+}
+
+function renderCards() {
+  const monthKey = document.getElementById("monthSelect").value;
+  const dateStr = document.getElementById("entryDate").value;
+  const grid = document.getElementById("cardsGrid");
+  grid.innerHTML = "";
+  lastCardModels = buildCardModels(monthKey, dateStr);
+  const visibleCards = lastCardModels.filter(cardPassesFilter);
+  if (!visibleCards.length) {
+    grid.innerHTML = `<div class="empty-note">No dashboard cards match this filter.</div>`;
+    return;
+  }
+  visibleCards.forEach(model => {
+    const color = model.status.color;
+    const targetText = formatMetricValue(model.target, model.metricType, model.currency);
+    const selectedText = formatMetricValue(model.selectedDayActual, model.metricType, model.currency);
+    const mtdText = formatMetricValue(model.monthToDateActual, model.metricType, model.currency);
+    const dailyTargetText = formatMetricValue(model.dailyTarget, model.metricType, model.currency);
+    const expectedText = formatMetricValue(model.expectedTillDate, model.metricType, model.currency);
+    const varianceText = `${model.variance >= 0 ? "+" : ""}${formatMetricValue(model.variance, model.metricType, model.currency)}`;
+    const maxRecent = Math.max(...model.series.slice(-7), model.dailyTarget, 1);
+    const [accent, accent2] = cardAccentPalette(model);
+    const card = document.createElement("div");
+    card.className = `card ${model.ownerType}-card status-${model.status.key}`;
+    card.style.setProperty("--status-color", color);
+    card.style.setProperty("--card-accent", accent);
+    card.style.setProperty("--card-accent-2", accent2);
+    card.style.setProperty("--card-edge-2", accent2);
+    card.dataset.cardKey = model.key;
+    card.innerHTML = `
+      <div class="card-topline">
+        <div>
+          <h3>${escapeHTML(model.name)}</h3>
+          <div class="badge-row">
+            <span class="card-badge ${model.ownerType}">${model.ownerType === "team" ? "Team" : "User"}</span>
+            <span class="card-badge">${model.metricType === "revenue" ? "Revenue" : "Leads"}</span>
+            ${model.metricType === "revenue" ? `<span class="card-badge">${escapeHTML(model.currency)}</span>` : ""}
+            <span class="card-badge status">${escapeHTML(model.status.label)}</span>
+          </div>
+          <div class="target">Monthly target: ${targetText}</div>
+        </div>
+        <div class="donut" style="--pct:${clampPct(model.ringProgress)}%; background: conic-gradient(${color} ${clampPct(model.ringProgress)}%, #2a2f39 0);"><span>${model.ringProgress.toFixed(0)}%</span></div>
+      </div>
+      <div class="card-stats">
+        <span><b>${mtdText}</b> / ${targetText}</span>
+        <span class="pct" style="color:${color}">${model.progressMode} ring</span>
+      </div>
+      <div class="mini-metrics">
+        <div class="mini-metric"><span>Selected day</span><b>${selectedText}</b></div>
+        <div class="mini-metric"><span>Daily target</span><b>${dailyTargetText}</b></div>
+        <div class="mini-metric"><span>${escapeHTML(model.range.expectedLabel)}</span><b>${expectedText}</b></div>
+        <div class="mini-metric"><span>Variance</span><b style="color:${model.variance >= 0 ? "var(--green)" : "var(--red)"}">${varianceText}</b></div>
+        ${renderProgressBar("Daily progress", model.dailyProgress, color)}
+        ${renderProgressBar("Monthly progress", model.monthlyProgress, color)}
+      </div>
+      <div class="sparkline" title="Recent daily performance">
+        ${model.series.slice(-7).map(value => `<span style="height:${Math.max(8, (Number(value || 0) / maxRecent) * 100)}%; background:${value >= model.dailyTarget ? "var(--green)" : "var(--amber)"}"></span>`).join("")}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  grid.querySelectorAll("[data-card-key]").forEach(card => {
+    card.addEventListener("click", () => openCardPopup(card.dataset.cardKey));
+  });
+}
+
+function chartPolyline(values, width = 560, height = 120) {
+  const max = Math.max(...values, 1);
+  const step = values.length > 1 ? width / (values.length - 1) : width;
+  return values.map((value, index) => {
+    const x = index * step;
+    const y = height - ((Number(value || 0) / max) * (height - 16)) - 8;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+}
+
+function renderSvgChart(title, values, color = "var(--accent)") {
+  const points = chartPolyline(values);
+  return `
+    <div class="chart-panel">
+      <div class="chart-title">${escapeHTML(title)}</div>
+      <svg class="svg-chart" viewBox="0 0 560 120" preserveAspectRatio="none" role="img" aria-label="${escapeHTML(title)}">
+        <polyline fill="none" stroke="${color}" stroke-width="3" points="${points}"></polyline>
+      </svg>
+    </div>
+  `;
+}
+
+function cumulativeValues(values) {
+  let total = 0;
+  return values.map(value => {
+    total += Number(value || 0);
+    return total;
+  });
+}
+
+function targetValues(model) {
+  let total = 0;
+  return model.series.map(() => {
+    total += Number(model.dailyTarget || 0);
+    return total;
+  });
+}
+
+function logsForCard(model) {
+  const monthKey = document.getElementById("monthSelect").value;
+  const inRange = item => {
+    const day = dayFromDateInMonth(item.entry_date, monthKey);
+    return day !== null && day >= model.range.startDay && day <= model.range.endDay;
+  };
+  if (model.ownerType === "team") {
+    const assignedUserIds = usersAssignedToTeamMetric(model).map(user => Number(user.id));
+    const teamLogs = (allAdjustments[monthKey] || [])
+      .filter(item => item.team_id === model.id)
+      .filter(inRange)
+      .map(item => ({ ...item, subject: teamName(item.team_id), actor: item.user_name || "Unknown" }));
+    const userLogs = (allUserAdjustments[monthKey] || [])
+      .filter(item => assignedUserIds.includes(Number(item.entry_user_id)))
+      .filter(inRange)
+      .map(item => ({ ...item, subject: item.entry_user_name || entryUserName(item.entry_user_id), actor: item.actor_name || "Unknown" }));
+    return [...teamLogs, ...userLogs].sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+  }
+  if (model.sourceTeams && model.sourceTeams.length) {
+    const ids = model.sourceTeams.map(team => team.id);
+    return (allAdjustments[monthKey] || [])
+      .filter(item => ids.includes(item.team_id))
+      .filter(inRange)
+      .map(item => ({ ...item, subject: teamName(item.team_id), actor: item.user_name || "Unknown" }));
+  }
+  return (allUserAdjustments[monthKey] || [])
+    .filter(item => Number(item.entry_user_id) === Number(model.id))
+    .filter(inRange)
+    .map(item => ({ ...item, subject: item.entry_user_name || entryUserName(item.entry_user_id), actor: item.actor_name || "Unknown" }));
+}
+
+function renderHistoryRows(model) {
+  const rows = logsForCard(model).slice(0, 20);
+  if (!rows.length) return `<div class="empty-note">No add/revoke history for this card.</div>`;
+  return `
+    <div class="table-scroll">
+      <table class="history-table">
+        <thead><tr><th>Date</th><th>Action</th><th>Amount</th><th>By</th><th>Subject</th>${isOwner() ? "<th>Revoke</th>" : ""}</tr></thead>
+        <tbody>
+          ${rows.map(item => `
+            <tr>
+              <td>${escapeHTML(item.entry_date)}</td>
+              <td>${escapeHTML(item.action)}</td>
+              <td>${formatMetricValue(item.amount, item.metric_type || model.metricType, item.currency || model.currency)}</td>
+              <td>${escapeHTML(item.actor)}</td>
+              <td>${escapeHTML(item.subject)}</td>
+              ${isOwner() ? `<td>${renderHistoryRevokeButton(item.entry_user_id != null ? "user" : "team", item)}</td>` : ""}
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderHistoryRevokeButton(kind, item) {
+  if (!isOwner() || item.action !== "add" || !(Number(item.id) > 0)) return "";
+  const history = kind === "team" ? allAdjustments : allUserAdjustments;
+  const reversed = (history[monthKeyFromDate(item.entry_date)] || [])
+    .some(row => Number(row.reverses_adjustment_id) === Number(item.id));
+  const pending = pendingHistoryRevokes.has(`${kind}:${item.id}`);
+  return `<button type="button" class="danger" data-history-kind="${kind}" data-history-id="${Number(item.id)}" data-history-date="${escapeHTML(item.entry_date)}" ${reversed || pending ? "disabled" : ""}>${reversed ? "Revoked" : pending ? "Revoking..." : "Revoke"}</button>`;
+}
+
+async function handleHistoryRevoke(button) {
+  if (!isOwner() || button.disabled) return;
+  const kind = button.dataset.historyKind;
+  const id = Number(button.dataset.historyId);
+  const monthKey = monthKeyFromDate(button.dataset.historyDate);
+  const history = kind === "team" ? allAdjustments : allUserAdjustments;
+  const item = (history[monthKey] || []).find(row => Number(row.id) === id && row.action === "add");
+  const key = `${kind}:${id}`;
+  if (!item || pendingHistoryRevokes.has(key)) return;
+  const subject = kind === "team"
+    ? (REVOKE_TEAMS.find(team => team.id === item.team_id)?.name || "this team")
+    : (item.entry_user_name || REVOKE_USERS.find(user => Number(user.id) === Number(item.entry_user_id))?.name || "this user");
+  const amount = formatMetricValue(item.amount, item.metric_type || "leads", item.currency);
+  if (!confirm(`Revoke ${amount} for ${subject} on ${item.entry_date}? The original entry will remain in history.`)) return;
+  pendingHistoryRevokes.add(key);
+  const matchingButtons = () => [...document.querySelectorAll("[data-history-id]")]
+    .filter(el => el.dataset.historyKind === kind && Number(el.dataset.historyId) === id);
+  matchingButtons().forEach(el => { el.disabled = true; el.textContent = "Revoking..."; });
+  try {
+    await apiRequest("history_revoke", { method: "POST", body: { kind, adjustment_id: id } });
+    await loadMonthData(monthKey);
+    loadEntryFieldsForDate();
+    renderAll();
+    const cardModal = document.getElementById("cardModal");
+    if (!cardModal.classList.contains("hidden")) openCardPopup(cardModal.dataset.cardKey);
+    const dayModal = document.getElementById("dayModal");
+    if (!dayModal.classList.contains("hidden")) openDayPopup(dayModal.dataset.date);
+    showStatus();
+  } catch (e) {
+    alert(e.message || "History entry could not be revoked.");
+  } finally {
+    pendingHistoryRevokes.delete(key);
+    const reversed = (history[monthKey] || []).some(row => Number(row.reverses_adjustment_id) === id);
+    matchingButtons().forEach(el => { el.disabled = reversed; el.textContent = reversed ? "Revoked" : "Revoke"; });
+  }
+}
+
+function openCardPopup(cardKey) {
+  const model = lastCardModels.find(item => item.key === cardKey);
+  if (!model) return;
+  const modal = document.getElementById("cardModal");
+  modal.dataset.cardKey = cardKey;
+  document.getElementById("cardModalTitle").textContent = model.name;
+  document.getElementById("cardModalSummary").textContent =
+    `${model.ownerType === "team" ? "Team" : "User"} | ${model.metricType === "revenue" ? "Revenue" : "Leads"}${model.currency ? " | " + model.currency : ""}`;
+  const selectedText = formatMetricValue(model.selectedDayActual, model.metricType, model.currency);
+  const mtdText = formatMetricValue(model.monthToDateActual, model.metricType, model.currency);
+  const targetText = formatMetricValue(model.target, model.metricType, model.currency);
+  const dailyTargetText = formatMetricValue(model.dailyTarget, model.metricType, model.currency);
+  const expectedText = formatMetricValue(model.expectedTillDate, model.metricType, model.currency);
+  const varianceText = `${model.variance >= 0 ? "+" : ""}${formatMetricValue(model.variance, model.metricType, model.currency)}`;
+  const remainingText = formatMetricValue(model.remainingTarget, model.metricType, model.currency);
+  const avgText = formatMetricValue(model.avgPerDay, model.metricType, model.currency);
+  const requiredText = formatMetricValue(model.requiredAvg, model.metricType, model.currency);
+  document.getElementById("cardModalDetails").innerHTML = `
+    <div class="analytics-grid">
+      <div class="mini-metric"><span>Monthly target</span><b>${targetText}</b></div>
+      <div class="mini-metric"><span>Daily target</span><b>${dailyTargetText}</b></div>
+      <div class="mini-metric"><span>Selected day actual</span><b>${selectedText}</b></div>
+      <div class="mini-metric"><span>${escapeHTML(model.range.label)}</span><b>${mtdText}</b></div>
+      <div class="mini-metric"><span>${escapeHTML(model.range.expectedLabel)}</span><b>${expectedText}</b></div>
+      <div class="mini-metric"><span>Variance</span><b style="color:${model.variance >= 0 ? "var(--green)" : "var(--red)"}">${varianceText}</b></div>
+      <div class="mini-metric"><span>Remaining target</span><b>${remainingText}</b></div>
+      <div class="mini-metric"><span>Completion</span><b>${model.monthlyProgress.toFixed(1)}%</b></div>
+      <div class="mini-metric"><span>Average per day so far</span><b>${avgText}</b></div>
+      <div class="mini-metric"><span>Required remaining avg</span><b>${requiredText}</b></div>
+      <div class="mini-metric"><span>Best day</span><b>${model.best.day}: ${formatMetricValue(model.best.value, model.metricType, model.currency)}</b></div>
+      <div class="mini-metric"><span>Worst day</span><b>${model.worst.day}: ${formatMetricValue(model.worst.value, model.metricType, model.currency)}</b></div>
+      <div class="mini-metric"><span>Last 7 days</span><b>${formatMetricValue(model.last7, model.metricType, model.currency)}</b></div>
+      <div class="mini-metric"><span>Trend</span><b>${escapeHTML(model.trend)}</b></div>
+    </div>
+    ${renderSvgChart("Daily chart", model.series, model.status.color)}
+    ${renderSvgChart("Cumulative monthly chart", cumulativeValues(model.series), model.status.color)}
+    ${renderSvgChart("Target vs actual baseline", targetValues(model), "var(--muted)")}
+    <div class="section-title">Add/Revoke history</div>
+    ${renderHistoryRows(model)}
+  `;
+  modal.classList.remove("hidden");
+}
+
+function closeCardPopup() {
+  document.getElementById("cardModal").classList.add("hidden");
+}
+
+function renderCalendar() {
+  const monthKey = document.getElementById("monthSelect").value;
+  const monthObj = allData[monthKey] || {};
+  const userMonthObj = allUserData[monthKey] || {};
+  const leaveObj = allLeaves[monthKey] || {};
+  const selectedDate = document.getElementById("entryDate").value;
+  const today = todayISO();
+  const [year, month] = monthKey.split("-").map(Number);
+  const firstDay = new Date(year, month - 1, 1);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const firstWeekday = firstDay.getDay();
+  const dailyTarget = TEAMS.reduce((sum, team) => sum + Number(team.target || 0), 0) / daysInMonth;
+  const grid = document.getElementById("calendarGrid");
+  const summary = document.getElementById("calendarSummary");
+  const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const monthlyUnitTotals = { USD: 0, INR: 0, Leads: 0 };
+
+  Array.from(new Set([...Object.keys(monthObj), ...Object.keys(userMonthObj)])).forEach(dateStr => {
+    const unitTotals = computeCalendarUnitTotals(monthObj[dateStr] || {}, userMonthObj[dateStr] || {});
+    monthlyUnitTotals.USD += unitTotals.USD;
+    monthlyUnitTotals.INR += unitTotals.INR;
+    monthlyUnitTotals.Leads += unitTotals.Leads;
+  });
+
+  summary.textContent = `${monthLabel(monthKey)}: ${calendarUnitSummaryText(monthlyUnitTotals)}`;
+  grid.innerHTML = "";
+
+  weekdays.forEach(day => {
+    const label = document.createElement("div");
+    label.className = "calendar-weekday";
+    label.textContent = day;
+    grid.appendChild(label);
+  });
+
+  for (let i = 0; i < firstWeekday; i++) {
+    const blank = document.createElement("div");
+    blank.className = "calendar-empty";
+    grid.appendChild(blank);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${monthKey}-${pad(day)}`;
+    const entries = monthObj[dateStr] || {};
+    const userEntries = userMonthObj[dateStr] || {};
+    const leave = leaveObj[dateStr];
+    const daySummary = computeDaySummary(entries);
+    const userSummary = computeUserDaySummary(userEntries);
+    const unitTotals = computeCalendarUnitTotals(entries, userEntries);
+    const dayTotal = unitTotals.USD + unitTotals.INR + unitTotals.Leads;
+    const ratio = dailyTarget > 0 ? ((unitTotals.USD + unitTotals.INR) / dailyTarget) : 0;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "calendar-day";
+    if (dayTotal > 0) {
+      if (ratio >= 1) button.classList.add("good");
+      else if (ratio >= 0.6) button.classList.add("mid");
+      else button.classList.add("low");
+    }
+    if (leave) button.classList.add("leave-day");
+    if (dateStr === selectedDate) button.classList.add("selected");
+    if (dateStr === today) button.classList.add("today");
+    button.innerHTML = `
+      <span class="calendar-date">${day}</span>
+      <span class="calendar-values">${renderCalendarUnitLines(unitTotals)}</span>
+      <span class="calendar-meta">${leave ? `<span class="leave-marker">! Leave</span>` : ((daySummary.logged || userSummary.logged) ? `${daySummary.logged} team${daySummary.logged !== 1 ? "s" : ""}, ${userSummary.logged} user${userSummary.logged !== 1 ? "s" : ""}` : "No data")}</span>
+    `;
+    button.addEventListener("click", () => {
+      document.getElementById("entryDate").value = dateStr;
+      loadEntryFieldsForDate();
+      renderAll();
+      openDayPopup(dateStr);
+    });
+    grid.appendChild(button);
+  }
+}
+
+function renderCalendarEditor() {
+  const editor = document.getElementById("calendarEditor");
+  if (!editor) return;
+  const dateStr = document.getElementById("entryDate").value;
+  const monthKey = monthKeyFromDate(dateStr);
+  const dayEntries = (allData[monthKey] || {})[dateStr] || {};
+  const userDayEntries = (allUserData[monthKey] || {})[dateStr] || {};
+  const unitTotals = computeCalendarUnitTotals(dayEntries, userDayEntries);
+
+  if (!canUseOwnerEditControls()) {
+    editor.innerHTML = `<div class="readonly-note">${escapeHTML(dateStr)}: ${escapeHTML(calendarUnitSummaryText(unitTotals))}</div>`;
+    return;
+  }
+
+  editor.innerHTML = `
+    <div class="calendar-summary">${escapeHTML(dateStr)}: ${escapeHTML(calendarUnitSummaryText(unitTotals))}</div>
+    <div class="calendar-edit-grid">
+      ${TEAMS.map(t => `
+        <div class="calendar-edit-item">
+          <span>${escapeHTML(t.name)}</span>
+          <span class="readonly-note">Current: ${formatTeamValue(teamTotalForDate(t, dateStr), t)}</span>
+          <div class="calendar-actions">
+            <input type="number" min="0" step="any" id="calendar_add_${t.id}" value="0" placeholder="Add ${escapeHTML(teamUnitLabel(t))}">
+            <button data-calendar-add="${t.id}">Add</button>
+            <input type="number" min="0" step="any" id="calendar_revoke_${t.id}" value="0" placeholder="Revoke ${escapeHTML(teamUnitLabel(t))}">
+            <button class="danger" data-calendar-revoke="${t.id}">Revoke</button>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+  editor.querySelectorAll("[data-calendar-add]").forEach(btn => {
+    btn.addEventListener("click", () => handleCalendarAdd(btn.dataset.calendarAdd));
+  });
+  editor.querySelectorAll("[data-calendar-revoke]").forEach(btn => {
+    btn.addEventListener("click", () => handleCalendarRevoke(btn.dataset.calendarRevoke));
+  });
+}
+
+function dayAdjustments(dateStr) {
+  return (allAdjustments[monthKeyFromDate(dateStr)] || []).filter(item => item.entry_date === dateStr);
+}
+
+function userDayAdjustments(dateStr) {
+  return (allUserAdjustments[monthKeyFromDate(dateStr)] || []).filter(item => item.entry_date === dateStr);
+}
+
+function renderOwnerSidebar() {
+  const sidebar = document.getElementById("ownerSidebar");
+  if (!sidebar) return;
+  sidebar.classList.toggle("hidden", !canUseOwnerEditControls() || currentView !== "home");
+  if (!canUseOwnerEditControls() || currentView !== "home") return;
+
+  const dateStr = document.getElementById("entryDate").value;
+  const monthKey = monthKeyFromDate(dateStr);
+  const dayEntries = (allData[monthKey] || {})[dateStr] || {};
+  const userDayEntries = (allUserData[monthKey] || {})[dateStr] || {};
+  const leave = (allLeaves[monthKey] || {})[dateStr];
+  const summary = computeDaySummary(dayEntries);
+  const userSummary = computeUserDaySummary(userDayEntries);
+  const unitTotals = computeCalendarUnitTotals(dayEntries, userDayEntries);
+
+  document.getElementById("sidebarDate").value = dateStr;
+  document.getElementById("sidebarDaySummary").innerHTML = `
+    <div class="calendar-summary">${escapeHTML(dateStr)}</div>
+    <strong>${escapeHTML(calendarUnitSummaryText(unitTotals))}</strong>
+    <span class="readonly-note">${summary.logged} team${summary.logged !== 1 ? "s" : ""}, ${userSummary.logged} user${userSummary.logged !== 1 ? "s" : ""} logged</span>
+  `;
+
+  document.getElementById("sidebarEntryControls").innerHTML = [
+    ...TEAMS.map(t => `
+    <div class="sidebar-entry-item">
+      <strong>${escapeHTML(t.name)}</strong>
+      <span class="readonly-note">Current: ${formatTeamValue(teamTotalForDate(t, dateStr), t)}</span>
+      <div class="sidebar-entry-actions">
+        <input type="number" min="0" step="any" id="sidebar_add_${t.id}" value="0" placeholder="Add ${escapeHTML(teamUnitLabel(t))}">
+        <button data-sidebar-add="${t.id}">Add</button>
+        <input type="number" min="0" step="any" id="sidebar_revoke_${t.id}" value="0" placeholder="Revoke ${escapeHTML(teamUnitLabel(t))}">
+        <button class="danger" data-sidebar-revoke="${t.id}">Revoke</button>
+      </div>
+    </div>
+    `),
+    ...listEntryUsers().map(u => `
+    <div class="sidebar-entry-item">
+      <strong>${escapeHTML(u.name)}</strong>
+      <span class="readonly-note">Current: ${formatUserValue(userDayEntries[u.id] || 0, u)}</span>
+      <div class="sidebar-entry-actions">
+        <input type="number" min="0" step="any" id="sidebar_user_add_${u.id}" value="0" placeholder="Add ${escapeHTML(userUnitLabel(u))}">
+        <button data-sidebar-user-add="${u.id}">Add</button>
+        <input type="number" min="0" step="any" id="sidebar_user_revoke_${u.id}" value="0" placeholder="Revoke ${escapeHTML(userUnitLabel(u))}">
+        <button class="danger" data-sidebar-user-revoke="${u.id}">Revoke</button>
+      </div>
+    </div>
+    `)
+  ].join("");
+
+  document.getElementById("sidebarLeaveControls").innerHTML = `
+    <label for="leaveNote">Leave marker</label>
+    <input type="text" id="leaveNote" value="${escapeHTML(leave ? (leave.note || "") : "")}" placeholder="Leave note">
+    <button id="markLeaveBtn">${leave ? "Update leave" : "Mark leave"}</button>
+    ${leave ? `<button class="danger" id="clearLeaveBtn">Clear leave</button>` : ""}
+  `;
+
+  document.querySelectorAll("[data-sidebar-add]").forEach(btn => {
+    btn.addEventListener("click", () => handleSidebarAdd(btn.dataset.sidebarAdd));
+  });
+  document.querySelectorAll("[data-sidebar-revoke]").forEach(btn => {
+    btn.addEventListener("click", () => handleSidebarRevoke(btn.dataset.sidebarRevoke));
+  });
+  document.querySelectorAll("[data-sidebar-user-add]").forEach(btn => {
+    btn.addEventListener("click", () => handleSidebarUserAdd(btn.dataset.sidebarUserAdd));
+  });
+  document.querySelectorAll("[data-sidebar-user-revoke]").forEach(btn => {
+    btn.addEventListener("click", () => handleSidebarUserRevoke(btn.dataset.sidebarUserRevoke));
+  });
+  document.getElementById("markLeaveBtn").addEventListener("click", () => saveLeaveForDate(true));
+  const clearBtn = document.getElementById("clearLeaveBtn");
+  if (clearBtn) clearBtn.addEventListener("click", () => saveLeaveForDate(false));
+}
+
+function openDayPopup(dateStr) {
+  const monthKey = monthKeyFromDate(dateStr);
+  const dayEntries = (allData[monthKey] || {})[dateStr] || {};
+  const userDayEntries = (allUserData[monthKey] || {})[dateStr] || {};
+  const leave = (allLeaves[monthKey] || {})[dateStr];
+  const logs = dayAdjustments(dateStr);
+  const userLogs = userDayAdjustments(dateStr);
+  const summary = computeDaySummary(dayEntries);
+  const userSummary = computeUserDaySummary(userDayEntries);
+  const modal = document.getElementById("dayModal");
+  modal.dataset.date = dateStr;
+
+  document.getElementById("modalDateTitle").textContent = dateStr;
+  document.getElementById("modalDateSummary").textContent = calendarUnitSummaryText(computeCalendarUnitTotals(dayEntries, userDayEntries));
+
+  const teamRows = TEAMS.map(t => `
+    <div class="detail-row">
+      <div>${escapeHTML(t.name)}</div>
+      <strong>${formatTeamValue(teamTotalForDate(t, dateStr), t)}</strong>
+    </div>
+  `).join("");
+  const userRows = ENTRY_USERS.map(u => `
+    <div class="detail-row">
+      <div>${escapeHTML(u.name)}</div>
+      <strong>${formatUserValue(userDayEntries[u.id] || 0, u)}</strong>
+    </div>
+  `).join("");
+  const logRows = logs.length ? logs.map(item => {
+    const sign = item.action === "revoke" ? "-" : "+";
+    const team = TEAMS.find(t => t.id === item.team_id);
+    return `
+      <div class="detail-row">
+        <div><strong>${escapeHTML(item.user_name || "Unknown")}</strong><span> ${escapeHTML(teamName(item.team_id))} ${escapeHTML(item.action)}</span></div>
+        <strong>${sign}${team ? formatTeamValue(item.amount, team) : formatMetricValue(item.amount, item.metric_type || "revenue", item.currency || "USD")}</strong>
+        ${renderHistoryRevokeButton("team", item)}
+      </div>
+    `;
+  }).join("") : `<div class="empty-note">No adjustment log for this day.</div>`;
+  const userLogRows = userLogs.length ? userLogs.map(item => {
+    const sign = item.action === "revoke" ? "-" : "+";
+    const entryUser = ENTRY_USERS.find(u => Number(u.id) === Number(item.entry_user_id));
+    return `
+      <div class="detail-row">
+        <div><strong>${escapeHTML(item.actor_name || "Unknown")}</strong><span> ${escapeHTML(item.entry_user_name || entryUserName(item.entry_user_id))} ${escapeHTML(item.action)}</span></div>
+        <strong>${sign}${entryUser ? formatUserValue(item.amount, entryUser) : formatUnitValue(item.amount, "leads")}</strong>
+        ${renderHistoryRevokeButton("user", item)}
+      </div>
+    `;
+  }).join("") : `<div class="empty-note">No user log for this day.</div>`;
+
+  document.getElementById("modalDayDetails").innerHTML = `
+    ${leave ? `<div class="detail-row" style="border-color:var(--red);"><div class="leave-marker">! Leave marker</div><strong>${escapeHTML(leave.note || "Leave")}</strong></div>` : ""}
+    <div class="section-title">Team performance</div>
+    <div class="detail-list">${teamRows}</div>
+    <div class="section-title">User performance</div>
+    <div class="detail-list">${userRows || `<div class="empty-note">No user rows.</div>`}</div>
+    <div class="section-title">Entry log</div>
+    <div class="detail-list">${logRows}</div>
+    <div class="section-title">User log</div>
+    <div class="detail-list">${userLogRows}</div>
+  `;
+  modal.classList.remove("hidden");
+}
+
+function closeDayPopup() {
+  document.getElementById("dayModal").classList.add("hidden");
+}
+
+function renderLog() {
+  const monthKey = document.getElementById("monthSelect").value;
+  const monthObj = allData[monthKey] || {};
+  const userMonthObj = allUserData[monthKey] || {};
+  const adjustments = allAdjustments[monthKey] || [];
+  const userAdjustments = allUserAdjustments[monthKey] || [];
+  const container = document.getElementById("logContainer");
+  const dates = Array.from(new Set([
+    ...Object.keys(monthObj),
+    ...Object.keys(userMonthObj),
+    ...adjustments.map(item => item.entry_date),
+    ...userAdjustments.map(item => item.entry_date)
+  ])).sort().reverse();
+
+  if (dates.length === 0) {
+    container.innerHTML = `<div class="empty-note">No entries yet.</div>`;
+    return;
+  }
+
+  container.innerHTML = "";
+  dates.forEach(dateStr => {
+    const entries = monthObj[dateStr] || {};
+    const userEntries = userMonthObj[dateStr] || {};
+    const teamSnapshotItems = TEAMS
+      .filter(t => typeof entries[t.id] === "number")
+      .map(t => ({
+        kind: "snapshot",
+        actionLabel: "Saved total",
+        actor: "Team entry",
+        subject: t.name,
+        subjectType: "Team",
+        metric: t.metric_type || "revenue",
+        amount: formatTeamValue(entries[t.id], t)
+      }));
+    const userSnapshotItems = ENTRY_USERS
+      .filter(u => typeof userEntries[u.id] === "number")
+      .map(u => ({
+        kind: "snapshot",
+        actionLabel: "Saved total",
+        actor: u.name,
+        subject: u.name,
+        subjectType: "User",
+        metric: u.metric_type || "leads",
+        team: (u.team_ids || []).map(teamName).filter(Boolean).join(", ") || "No team",
+        amount: formatUserValue(userEntries[u.id], u)
+      }));
+    const dayAdjustments = adjustments.filter(item => item.entry_date === dateStr);
+    const dayUserAdjustments = userAdjustments.filter(item => item.entry_date === dateStr);
+    const teamLogItems = dayAdjustments.map(item => {
+      const sign = item.action === "revoke" ? "-" : "+";
+      const team = (isOwner() ? REVOKE_TEAMS : TEAMS).find(t => t.id === item.team_id);
+      const amount = team ? formatTeamValue(item.amount, team) : formatMetricValue(item.amount, item.metric_type || "revenue", item.currency || "USD");
+      return {
+        kind: item.action || "add",
+        revokeControl: renderHistoryRevokeButton("team", item),
+        actionLabel: item.action === "revoke" ? "Revoked" : "Added",
+        actor: item.user_name || "Unknown",
+        subject: team ? team.name : teamName(item.team_id),
+        subjectType: "Team",
+        metric: item.metric_type || (team ? team.metric_type : "revenue"),
+        amount: `${sign}${amount}`,
+        createdAt: item.created_at || "",
+        note: item.note || ""
+      };
+    });
+    const userLogItems = dayUserAdjustments.map(item => {
+      const sign = item.action === "revoke" ? "-" : "+";
+      const entryUser = (isOwner() ? REVOKE_USERS : ENTRY_USERS).find(u => Number(u.id) === Number(item.entry_user_id));
+      const amount = formatMetricValue(item.amount, item.metric_type || (entryUser ? entryUser.sales_type : "leads"), item.currency || (entryUser ? entryUser.currency : null));
+      return {
+        kind: item.action || "add",
+        revokeControl: renderHistoryRevokeButton("user", item),
+        actionLabel: item.action === "revoke" ? "Revoked" : "Added",
+        actor: item.actor_name || "Unknown",
+        subject: item.entry_user_name || entryUserName(item.entry_user_id),
+        subjectType: "User",
+        metric: item.metric_type || (entryUser ? entryUser.sales_type : "leads"),
+        team: entryUser ? (entryUser.team_ids || []).map(teamName).filter(Boolean).join(", ") || "No team" : "No team",
+        amount: `${sign}${amount}`,
+        createdAt: item.created_at || "",
+        note: item.note || ""
+      };
+    });
+    const logItems = [
+      ...teamLogItems,
+      ...userLogItems,
+      ...teamSnapshotItems,
+      ...userSnapshotItems
+    ];
+    const preview = logItems.slice(0, 3)
+      .map(item => `${item.actor} -> ${item.subject}: ${item.amount}`)
+      .join(" | ");
+    const extraCount = logItems.length > 3 ? ` +${logItems.length - 3} more` : "";
+
+    const header = document.createElement("div");
+    header.className = "day-header";
+    header.innerHTML = `
+      <div class="day-header-main">
+        <span class="day-header-date">${escapeHTML(dateStr)}</span>
+        <span class="day-header-preview">${escapeHTML(preview || "No data")}${escapeHTML(extraCount)}</span>
+      </div>
+      <span class="day-header-count">${logItems.length} detail${logItems.length !== 1 ? "s" : ""}</span>
+    `;
+
+    const bodyDiv = document.createElement("div");
+    bodyDiv.className = "day-body";
+    if (openLogDate === dateStr) bodyDiv.classList.add("open");
+    bodyDiv.innerHTML = logItems.length ? `
+      <div class="log-grid">
+        ${logItems.map(item => `
+          <div class="log-item ${escapeHTML(item.kind)}">
+            <div class="log-line"><span>User name</span><strong>${escapeHTML(item.actor)}</strong></div>
+            <div class="log-line"><span>${escapeHTML(item.subjectType)}</span><strong>${escapeHTML(item.subject)}</strong></div>
+            ${item.team ? `<div class="log-line"><span>Team</span><strong>${escapeHTML(item.team)}</strong></div>` : ""}
+            <div class="log-line"><span>Metric</span><strong>${escapeHTML((item.metric || "").toUpperCase())}</strong></div>
+            <div class="log-line"><span>Action</span><strong>${escapeHTML(item.actionLabel)}</strong></div>
+            <div class="log-line"><span>Count / amount</span><strong>${escapeHTML(item.amount)}</strong></div>
+            ${item.createdAt ? `<div class="log-line"><span>Logged at</span><strong>${escapeHTML(item.createdAt)}</strong></div>` : ""}
+            ${item.note ? `<div class="log-line"><span>Note</span><strong>${escapeHTML(item.note)}</strong></div>` : ""}
+            ${item.revokeControl || ""}
+          </div>
+        `).join("")}
+      </div>
+    ` : `<div class="empty-note">No data</div>`;
+
+    header.addEventListener("click", () => {
+      openLogDate = openLogDate === dateStr ? null : dateStr;
+      document.getElementById("entryDate").value = dateStr;
+      loadEntryFieldsForDate();
+      renderAll();
+    });
+
+    container.appendChild(header);
+    container.appendChild(bodyDiv);
+  });
+}
+
+function renderAll() {
+  buildDashboardFilters();
+  renderCards();
+  renderCalendar();
+  renderOwnerSidebar();
+  renderLog();
+  refreshDateDisplays();
+}
+
+function loadEntryFieldsForDate() {
+  const dateStr = document.getElementById("entryDate").value;
+  const monthKey = monthKeyFromDate(dateStr);
+  const monthObj = allData[monthKey] || {};
+  const dayEntries = monthObj[dateStr] || {};
+  const userMonthObj = allUserData[monthKey] || {};
+  const userDayEntries = userMonthObj[dateStr] || {};
+  const revokeDayEntries = (allRevokeData[monthKey] || {})[dateStr] || {};
+  const revokeUserDayEntries = (allRevokeUserData[monthKey] || {})[dateStr] || {};
+  (isOwner() ? REVOKE_TEAMS : TEAMS).forEach(t => {
+    const canUpdate = canUpdateTeam(t.id) && t.is_active === 1;
+    const input = document.getElementById(`entry_team_${t.id}`);
+    const revokeInput = document.getElementById(`revoke_team_${t.id}`);
+    const current = document.getElementById(`entry_current_team_${t.id}`);
+    if (current) current.textContent = formatTeamValue(isOwner() ? (revokeDayEntries[t.id] || 0) : teamTotalForDate(t, dateStr), t);
+    if (input) {
+      input.value = "0";
+      input.disabled = !canUpdate;
+    }
+    if (revokeInput) {
+      revokeInput.value = "0";
+      revokeInput.disabled = !canRevokeTeam(t.id);
+    }
+  });
+  (isOwner() ? REVOKE_USERS : ENTRY_USERS).forEach(u => {
+    const canUpdate = canUpdateEntryUser(u.id) && u.is_active === 1 && !u.deleted_at && u.show_entry_list === 1;
+    const input = document.getElementById(`entry_user_${u.id}`);
+    const revokeInput = document.getElementById(`revoke_user_${u.id}`);
+    const current = document.getElementById(`entry_current_user_${u.id}`);
+    if (current) current.textContent = formatUserValue((isOwner() ? revokeUserDayEntries : userDayEntries)[u.id] || 0, u);
+    if (input) {
+      input.value = "0";
+      input.disabled = !canUpdate;
+    }
+    if (revokeInput) {
+      revokeInput.value = "0";
+      revokeInput.disabled = !canRevokeEntryUser(u.id);
+    }
+  });
+}
+
+function readTeamValues(prefix) {
+  const values = [];
+  TEAMS.forEach(t => {
+    if (!canUpdateTeam(t.id)) return;
+    const input = document.getElementById(`${prefix}${t.id}`);
+    if (input && input.value !== "" && input.value !== null) {
+      const amount = parseFloat(input.value);
+      if (amount > 0) values.push({ team: t, amount });
+    }
+  });
+  return values;
+}
+
+function readUserValues(prefix) {
+  const values = [];
+  ENTRY_USERS.forEach(u => {
+    if (!canUpdateEntryUser(u.id)) return;
+    const input = document.getElementById(`${prefix}${u.id}`);
+    if (input && !input.disabled && input.value !== "" && input.value !== null) {
+      const amount = parseFloat(input.value);
+      if (amount > 0) values.push({ user: u, amount });
+    }
+  });
+  return values;
+}
+
+async function addValues(dateStr, values) {
+  if (!dateStr) {
+    alert("Pick a date first.");
+    return;
+  }
+  if (values.length === 0 || values.some(item => !isFinite(item.amount) || item.amount <= 0)) {
+    alert("Enter at least one amount greater than 0.");
+    return;
+  }
+  if (values.some(item => !canUpdateTeam(item.team.id))) {
+    alert("You are not assigned to one of these teams.");
+    return;
+  }
+
+  const monthKey = monthKeyFromDate(dateStr);
+  await Promise.all(values.map(item => saveTeamEntry(item.team.id, dateStr, item.amount)));
+  await loadMonthData(monthKey);
+  loadEntryFieldsForDate();
+  renderAll();
+  showStatus();
+}
+
+async function addUserValues(dateStr, values) {
+  if (!dateStr) {
+    alert("Pick a date first.");
+    return;
+  }
+  if (values.length === 0 || values.some(item => !isFinite(item.amount) || item.amount <= 0)) {
+    alert("Enter at least one amount greater than 0.");
+    return;
+  }
+  if (values.some(item => !canUpdateEntryUser(item.user.id))) {
+    alert("You can only update your own daily entry.");
+    return;
+  }
+
+  const monthKey = monthKeyFromDate(dateStr);
+  await Promise.all(values.map(item => saveUserEntry(item.user.id, dateStr, item.amount)));
+  await loadMonthData(monthKey);
+  loadEntryFieldsForDate();
+  renderAll();
+  showStatus();
+}
+
+async function revokeValues(dateStr, values) {
+  if (!dateStr) {
+    alert("Pick a date first.");
+    return;
+  }
+  if (values.length === 0 || values.some(item => !isFinite(item.amount) || item.amount <= 0)) {
+    alert("Enter at least one revoke amount greater than 0.");
+    return;
+  }
+  if (values.some(item => !canRevokeTeam(item.team.id))) {
+    alert("You are not assigned to one of these teams.");
+    return;
+  }
+
+  const monthKey = monthKeyFromDate(dateStr);
+  await Promise.all(values.map(item => revokeTeamEntry(item.team.id, dateStr, item.amount)));
+  await loadMonthData(monthKey);
+  loadEntryFieldsForDate();
+  renderAll();
+  showStatus();
+}
+
+async function revokeUserValues(dateStr, values) {
+  if (!dateStr) {
+    alert("Pick a date first.");
+    return;
+  }
+  if (values.length === 0 || values.some(item => !isFinite(item.amount) || item.amount <= 0)) {
+    alert("Enter at least one revoke amount greater than 0.");
+    return;
+  }
+  if (values.some(item => !canRevokeEntryUser(item.user.id))) {
+    alert("You can only update your own daily entry.");
+    return;
+  }
+
+  const monthKey = monthKeyFromDate(dateStr);
+  await Promise.all(values.map(item => revokeUserEntry(item.user.id, dateStr, item.amount)));
+  await loadMonthData(monthKey);
+  loadEntryFieldsForDate();
+  renderAll();
+  showStatus();
+}
+
+async function handleSave() {
+  try {
+    const dateStr = document.getElementById("entryDate").value;
+    const teamValues = readTeamValues("entry_team_");
+    const userValues = readUserValues("entry_user_");
+    if (teamValues.length === 0 && userValues.length === 0) {
+      alert("Enter at least one amount greater than 0.");
+      return;
+    }
+    const monthKey = monthKeyFromDate(dateStr);
+    await Promise.all([
+      ...teamValues.map(item => saveTeamEntry(item.team.id, dateStr, item.amount)),
+      ...userValues.map(item => saveUserEntry(item.user.id, dateStr, item.amount))
+    ]);
+    await loadMonthData(monthKey);
+    loadEntryFieldsForDate();
+    renderAll();
+    showStatus();
+  } catch (e) {
+    alert(e.message || "Something went wrong saving.");
+    console.error(e);
+  }
+}
+
+async function handleCardAdd(teamId) {
+  const team = TEAMS.find(t => t.id === teamId);
+  const input = document.getElementById(`card_add_${teamId}`);
+  if (!team || !input) return;
+  try {
+    await addValues(document.getElementById("entryDate").value, [{ team, amount: parseFloat(input.value) }]);
+  } catch (e) {
+    alert(e.message || "Something went wrong saving.");
+    console.error(e);
+  }
+}
+
+async function handleCardRevoke(teamId) {
+  const team = TEAMS.find(t => t.id === teamId);
+  const input = document.getElementById(`card_revoke_${teamId}`);
+  if (!team || !input) return;
+  try {
+    await revokeValues(document.getElementById("entryDate").value, [{ team, amount: parseFloat(input.value) }]);
+  } catch (e) {
+    alert(e.message || "Something went wrong revoking.");
+    console.error(e);
+  }
+}
+
+async function handleCalendarAdd(teamId) {
+  const team = TEAMS.find(t => t.id === teamId);
+  const input = document.getElementById(`calendar_add_${teamId}`);
+  if (!team || !input) return;
+  try {
+    await addValues(document.getElementById("entryDate").value, [{ team, amount: parseFloat(input.value) }]);
+  } catch (e) {
+    alert(e.message || "Something went wrong saving.");
+    console.error(e);
+  }
+}
+
+async function handleCalendarRevoke(teamId) {
+  const team = TEAMS.find(t => t.id === teamId);
+  const input = document.getElementById(`calendar_revoke_${teamId}`);
+  if (!team || !input) return;
+  try {
+    await revokeValues(document.getElementById("entryDate").value, [{ team, amount: parseFloat(input.value) }]);
+  } catch (e) {
+    alert(e.message || "Something went wrong revoking.");
+    console.error(e);
+  }
+}
+
+async function handleSidebarAdd(teamId) {
+  const team = TEAMS.find(t => t.id === teamId);
+  const input = document.getElementById(`sidebar_add_${teamId}`);
+  if (!team || !input) return;
+  try {
+    await addValues(document.getElementById("entryDate").value, [{ team, amount: parseFloat(input.value) }]);
+  } catch (e) {
+    alert(e.message || "Something went wrong saving.");
+    console.error(e);
+  }
+}
+
+async function handleSidebarRevoke(teamId) {
+  const team = TEAMS.find(t => t.id === teamId);
+  const input = document.getElementById(`sidebar_revoke_${teamId}`);
+  if (!team || !input) return;
+  try {
+    await revokeValues(document.getElementById("entryDate").value, [{ team, amount: parseFloat(input.value) }]);
+  } catch (e) {
+    alert(e.message || "Something went wrong revoking.");
+    console.error(e);
+  }
+}
+
+async function handleSidebarUserAdd(userId) {
+  const user = ENTRY_USERS.find(u => Number(u.id) === Number(userId));
+  const input = document.getElementById(`sidebar_user_add_${userId}`);
+  if (!user || !input) return;
+  try {
+    await addUserValues(document.getElementById("entryDate").value, [{ user, amount: parseFloat(input.value) }]);
+  } catch (e) {
+    alert(e.message || "Something went wrong saving.");
+    console.error(e);
+  }
+}
+
+async function handleSidebarUserRevoke(userId) {
+  const user = ENTRY_USERS.find(u => Number(u.id) === Number(userId));
+  const input = document.getElementById(`sidebar_user_revoke_${userId}`);
+  if (!user || !input) return;
+  try {
+    await revokeUserValues(document.getElementById("entryDate").value, [{ user, amount: parseFloat(input.value) }]);
+  } catch (e) {
+    alert(e.message || "Something went wrong revoking.");
+    console.error(e);
+  }
+}
+
+async function saveLeaveForDate(isLeave) {
+  const dateStr = document.getElementById("entryDate").value;
+  const noteInput = document.getElementById("leaveNote");
+  if (!dateStr) {
+    alert("Pick a date first.");
+    return;
+  }
+  try {
+    await apiRequest("leave_save", {
+      method: "POST",
+      body: { date: dateStr, is_leave: isLeave, note: noteInput ? noteInput.value : "" }
+    });
+    await loadMonthData(monthKeyFromDate(dateStr));
+    renderAll();
+    showStatus();
+  } catch (e) {
+    alert(e.message || "Leave marker could not be saved.");
+    console.error(e);
+  }
+}
+
+async function handleRowRevokeTeam(teamId) {
+  const team = (isOwner() ? REVOKE_TEAMS : TEAMS).find(t => t.id === teamId);
+  const input = document.getElementById(`revoke_team_${teamId}`);
+  if (!team || !input) return;
+  try {
+    await revokeValues(document.getElementById("entryDate").value, [{ team, amount: parseFloat(input.value) }]);
+  } catch (e) {
+    alert(e.message || "Something went wrong revoking.");
+    console.error(e);
+  }
+}
+
+async function handleRowRevokeUser(userId) {
+  const user = (isOwner() ? REVOKE_USERS : ENTRY_USERS).find(u => Number(u.id) === Number(userId));
+  const input = document.getElementById(`revoke_user_${userId}`);
+  if (!user || !input) return;
+  try {
+    await revokeUserValues(document.getElementById("entryDate").value, [{ user, amount: parseFloat(input.value) }]);
+  } catch (e) {
+    alert(e.message || "Something went wrong revoking.");
+    console.error(e);
+  }
+}
+
+function handleClear() {
+  (isOwner() ? REVOKE_TEAMS : TEAMS).forEach(t => {
+    const input = document.getElementById(`entry_team_${t.id}`);
+    const revokeInput = document.getElementById(`revoke_team_${t.id}`);
+    if (input) input.value = "0";
+    if (revokeInput) revokeInput.value = "0";
+  });
+  (isOwner() ? REVOKE_USERS : ENTRY_USERS).forEach(u => {
+    const input = document.getElementById(`entry_user_${u.id}`);
+    const revokeInput = document.getElementById(`revoke_user_${u.id}`);
+    if (input) input.value = "0";
+    if (revokeInput) revokeInput.value = "0";
+  });
+}
+
+function showStatus() {
+  const status = document.getElementById("statusMsg");
+  status.classList.add("show");
+  setTimeout(() => status.classList.remove("show"), 1500);
+}
+
+async function handleMonthChange() {
+  const monthKey = document.getElementById("monthSelect").value;
+  document.getElementById("loadingMsg").style.display = "inline";
+  if (!allData[monthKey]) await loadMonthData(monthKey);
+  document.getElementById("loadingMsg").style.display = "none";
+
+  const dateInput = document.getElementById("entryDate");
+  if (!dateInput.value || monthKeyFromDate(dateInput.value) !== monthKey) {
+    const today = todayISO();
+    dateInput.value = monthKeyFromDate(today) === monthKey ? today : firstDateOfMonth(monthKey);
+  }
+  refreshDateDisplays();
+
+  loadEntryFieldsForDate();
+  renderAll();
+}
+
+async function moveMonth(offset) {
+  const current = document.getElementById("monthSelect").value;
+  const next = addMonths(current, offset);
+  ensureMonthOption(next);
+  document.getElementById("monthSelect").value = next;
+  await handleMonthChange();
+}
+
+async function jumpToCurrentMonth() {
+  const current = monthKeyFromDate(todayISO());
+  ensureMonthOption(current);
+  document.getElementById("monthSelect").value = current;
+  await handleMonthChange();
+}
+
+async function moveSelectedDate(days) {
+  const current = document.getElementById("entryDate").value || todayISO();
+  const [year, month, day] = current.split("-").map(Number);
+  const next = new Date(year, month - 1, day + days);
+  const nextDate = `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`;
+  document.getElementById("entryDate").value = nextDate;
+  refreshDateDisplays();
+  await handleDateChange();
+  const selected = document.querySelector(".calendar-day.selected");
+  if (selected) selected.focus({ preventScroll: true });
+}
+
+function handleCalendarKeyDown(e) {
+  if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+  e.preventDefault();
+  const moves = {
+    ArrowLeft: -1,
+    ArrowRight: 1,
+    ArrowUp: -7,
+    ArrowDown: 7
+  };
+  moveSelectedDate(moves[e.key]);
+}
+
+function toggleEditMode() {
+  if (!isOwner()) return;
+  editMode = !editMode;
+  if (!editMode && currentView !== "home") {
+    showHomeView();
+    return;
+  }
+  updateModeUI();
+  buildEntryTable();
+  loadEntryFieldsForDate();
+  renderAll();
+}
+
+async function handleDateChange() {
+  const dateStr = document.getElementById("entryDate").value;
+  if (!dateStr) return;
+
+  const monthKey = monthKeyFromDate(dateStr);
+  const monthSelect = document.getElementById("monthSelect");
+  ensureMonthOption(monthKey);
+  if (monthSelect.value !== monthKey) {
+    monthSelect.value = monthKey;
+    document.getElementById("loadingMsg").style.display = "inline";
+    if (!allData[monthKey]) await loadMonthData(monthKey);
+    document.getElementById("loadingMsg").style.display = "none";
+  }
+  refreshDateDisplays();
+
+  loadEntryFieldsForDate();
+  renderAll();
+}
+
+async function handleLogin() {
+  document.getElementById("loginError").textContent = "";
+  try {
+    const data = await apiRequest("login", {
+      method: "POST",
+      body: {
+        username: document.getElementById("loginUsername").value,
+        password: document.getElementById("loginPassword").value
+      }
+    });
+    await showApp(data.user);
+  } catch (e) {
+    document.getElementById("loginError").textContent = e.message || "Login failed";
+  }
+}
+
+async function handleLogout() {
+  try {
+    await apiRequest("logout", { method: "POST" });
+  } catch (e) {
+    console.error(e);
+  }
+  showLogin();
+}
+
+async function refreshAfterTeamChange() {
+  await loadTeams();
+  buildEntryTable();
+  buildUserSelects();
+  const monthKey = document.getElementById("monthSelect").value;
+  await loadMonthData(monthKey);
+  loadEntryFieldsForDate();
+  renderAll();
+}
+
+async function loadManagedTeams() {
+  if (!canManageTeams()) return;
+  const data = await apiRequest("teams_manage");
+  renderManagedTeams(data.rows || []);
+}
+
+function renderManagedTeams(rows) {
+  const list = document.getElementById("teamsList");
+  if (rows.length === 0) {
+    list.innerHTML = `<div class="empty-note">No teams yet.</div>`;
+    return;
+  }
+
+  list.innerHTML = rows.map(team => `
+    <div class="team-row" data-team-id="${escapeHTML(team.id)}">
+      <input type="text" data-field="name" value="${escapeHTML(team.name)}">
+      <input type="number" min="0" step="any" data-field="target" value="${Number(team.target || 0)}">
+      <select data-field="metric_type">${buildSalesTypeOptions(team.metric_type || (team.unit === "leads" ? "leads" : "revenue"))}</select>
+      <select data-field="currency" ${(team.metric_type || (team.unit === "leads" ? "leads" : "revenue")) === "leads" ? "disabled" : ""}>${buildCurrencyOptions(team.currency || (["USD", "INR"].includes(team.unit) ? team.unit : "USD"))}</select>
+      <input type="number" step="1" data-field="position" value="${Number(team.position || 0)}">
+      <select data-field="progress_mode">${buildProgressModeOptions(team.progress_mode || "monthly")}</select>
+      <label class="user-active"><input type="checkbox" data-field="is_active" ${Number(team.is_active) ? "checked" : ""}> Active</label>
+      <button data-team-save="${escapeHTML(team.id)}">Save</button>
+    </div>
+  `).join("");
+
+  list.querySelectorAll("[data-team-save]").forEach(btn => {
+    btn.addEventListener("click", () => saveExistingTeam(btn.closest(".team-row")));
+  });
+  list.querySelectorAll('[data-field="metric_type"]').forEach(select => {
+    select.addEventListener("change", () => {
+      const row = select.closest(".team-row");
+      const currency = row.querySelector('[data-field="currency"]');
+      currency.disabled = select.value === "leads";
+    });
+  });
+}
+
+function readTeamRow(row) {
+  const get = field => row.querySelector(`[data-field="${field}"]`);
+  return {
+    id: row.dataset.teamId || "",
+    name: get("name").value,
+    target: get("target").value,
+    metric_type: get("metric_type").value,
+    currency: get("currency").value,
+    position: get("position").value,
+    progress_mode: get("progress_mode").value,
+    is_active: get("is_active").checked
+  };
+}
+
+async function saveExistingTeam(row) {
+  const err = document.getElementById("teamFormError");
+  err.textContent = "";
+  try {
+    await apiRequest("team_save", {
+      method: "POST",
+      body: readTeamRow(row)
+    });
+    await refreshAfterTeamChange();
+    await loadManagedTeams();
+    showStatus();
+  } catch (e) {
+    err.textContent = e.message || "Team could not be saved";
+  }
+}
+
+async function addTeam() {
+  const err = document.getElementById("teamFormError");
+  err.textContent = "";
+  try {
+    await apiRequest("team_save", {
+      method: "POST",
+      body: {
+        name: document.getElementById("newTeamName").value,
+        target: document.getElementById("newTeamTarget").value || 0,
+        metric_type: document.getElementById("newTeamMetricType").value,
+        currency: document.getElementById("newTeamCurrency").value,
+        position: document.getElementById("newTeamPosition").value || 0,
+        progress_mode: document.getElementById("newTeamProgressMode").value,
+        is_active: document.getElementById("newTeamActive").checked
+      }
+    });
+    document.getElementById("newTeamName").value = "";
+    document.getElementById("newTeamTarget").value = "";
+    document.getElementById("newTeamMetricType").value = "revenue";
+    document.getElementById("newTeamCurrency").value = "USD";
+    document.getElementById("newTeamCurrency").disabled = false;
+    document.getElementById("newTeamPosition").value = "";
+    document.getElementById("newTeamProgressMode").value = "monthly";
+    document.getElementById("newTeamActive").checked = true;
+    await refreshAfterTeamChange();
+    await loadManagedTeams();
+    showStatus();
+  } catch (e) {
+    err.textContent = e.message || "Team could not be created";
+  }
+}
+
+async function openTeams() {
+  currentView = "teams";
+  document.getElementById("homeContent").classList.add("hidden");
+  document.getElementById("userPanel").classList.add("hidden");
+  document.getElementById("teamPanel").classList.remove("hidden");
+  updateModeUI();
+  await loadManagedTeams();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function closeTeams() {
+  showHomeView();
+}
+
+async function loadExchangeRates() {
+  if (!canManageTeams()) return;
+  const err = document.getElementById("ratesFormError");
+  err.textContent = "";
+  try {
+    const [current, history] = await Promise.all([
+      apiRequest("exchange_rates_current"),
+      apiRequest("exchange_rates_history")
+    ]);
+    const rates = current.rates || {};
+    const usdInr = rates.USD_INR;
+    const inrUsd = rates.INR_USD;
+    document.getElementById("ratesCurrent").innerHTML = `
+      <div class="detail-row"><div>USD to INR</div><strong>${usdInr ? Number(usdInr.rate).toFixed(4) : "Manual rate not set"}</strong></div>
+      <div class="detail-row"><div>INR to USD</div><strong>${inrUsd ? Number(inrUsd.rate).toFixed(6) : "Manual rate not set"}</strong></div>
+      <div class="detail-row"><div>Last updated</div><strong>${escapeHTML((usdInr || inrUsd || {}).fetched_at || "-")}</strong></div>
+    `;
+    document.getElementById("ratesHistory").innerHTML = (history.rows || []).length
+      ? (history.rows || []).map(row => `
+          <div class="detail-row">
+            <div>${escapeHTML(row.base_currency)} to ${escapeHTML(row.target_currency)} <span>${escapeHTML(row.source || "")}</span></div>
+            <strong>${Number(row.rate).toFixed(row.target_currency === "USD" ? 6 : 4)}</strong>
+          </div>
+        `).join("")
+      : `<div class="empty-note">No exchange rate history yet.</div>`;
+  } catch (e) {
+    err.textContent = e.message || "Exchange rates could not be loaded";
+  }
+}
+
+async function saveManualRate() {
+  const err = document.getElementById("ratesFormError");
+  err.textContent = "";
+  try {
+    await apiRequest("exchange_rates_manual", {
+      method: "POST",
+      body: { rate: document.getElementById("manualUsdInrRate").value }
+    });
+    document.getElementById("manualUsdInrRate").value = "";
+    await loadExchangeRates();
+    showStatus();
+  } catch (e) {
+    err.textContent = e.message || "Manual rate could not be saved";
+  }
+}
+
+async function refreshLiveRate() {
+  const err = document.getElementById("ratesFormError");
+  err.textContent = "";
+  try {
+    await apiRequest("exchange_rates_refresh", { method: "POST", body: {} });
+    await loadExchangeRates();
+    showStatus();
+  } catch (e) {
+    err.textContent = e.message || "Live rate unavailable";
+  }
+}
+
+async function openRates() {
+  currentView = "rates";
+  document.getElementById("homeContent").classList.add("hidden");
+  document.getElementById("teamPanel").classList.add("hidden");
+  document.getElementById("userPanel").classList.add("hidden");
+  document.getElementById("ratesPanel").classList.remove("hidden");
+  updateModeUI();
+  await loadExchangeRates();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function closeRates() {
+  showHomeView();
+}
+
+async function loadUsers() {
+  if (!canManageUsers()) return;
+  const [data, teamData] = await Promise.all([apiRequest("users"), apiRequest("teams_manage")]);
+  managedUserTeams = teamData.rows || [];
+  renderUsers(data.rows || []);
+}
+
+function renderUsers(rows) {
+  managedUsers = rows;
+  const list = document.getElementById("usersList");
+  if (rows.length === 0) {
+    list.innerHTML = `<div class="empty-note">No users yet.</div>`;
+    return;
+  }
+
+  list.innerHTML = rows.map(user => {
+    const active = Number(user.is_active) === 1;
+    const self = Number(user.id) === Number(authUser.id);
+    const teams = (user.team_ids || []).map(id => {
+      const team = managedUserTeams.find(item => item.id === id);
+      return team ? `${team.name}${Number(team.is_active) === 0 ? " (Inactive)" : ""}` : id;
+    }).join(", ") || "No teams assigned";
+    return `
+      <div class="managed-user-row ${active ? "" : "is-inactive"}" role="listitem" data-user-id="${Number(user.id)}">
+        <div>
+          <strong class="managed-user-name">${escapeHTML(user.display_name || user.username)}</strong>
+          <span class="managed-user-meta">@${escapeHTML(user.username)} · ${escapeHTML(roleLabel(user.role))}${self ? " · You" : ""}</span>
+        </div>
+        <div><span class="managed-user-meta">Teams</span><span class="managed-user-name">${escapeHTML(teams)}</span></div>
+        <div>
+          <span class="user-state ${active ? "" : "inactive"}">${active ? "Active" : "Inactive"}</span>
+          <span class="managed-user-meta">Target: ${formatUserValue(user.entry_target, user)}</span>
+          <span class="managed-user-meta">Dashboard ${Number(user.show_dashboard_card) ? "On" : "Off"} · Entry list ${Number(user.show_entry_list) ? "On" : "Off"}</span>
+        </div>
+        <div class="managed-user-actions" aria-label="Actions for ${escapeHTML(user.username)}">
+          <button type="button" class="secondary" data-user-action="details">Details</button>
+          <button type="button" class="secondary" data-user-action="reset">Reset password</button>
+          <button type="button" class="${active ? "secondary" : ""}" data-user-action="active" ${self ? 'disabled title="You cannot deactivate your own owner account"' : ""}>${active ? "Deactivate" : "Activate"}</button>
+          <button type="button" class="danger" data-user-action="delete" ${self ? 'disabled title="You cannot delete your own owner account"' : ""}>Delete</button>
+        </div>
+      </div>`;
+  }).join("");
+
+  list.querySelectorAll("[data-user-action]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const user = managedUsers.find(item => Number(item.id) === Number(btn.closest("[data-user-id]").dataset.userId));
+      if (!user || userManagementBusy) return;
+      if (btn.dataset.userAction === "details") openUserDetails(user);
+      if (btn.dataset.userAction === "reset") openUserAction(user, "reset");
+      if (btn.dataset.userAction === "delete") openUserAction(user, "delete");
+      if (btn.dataset.userAction === "active") setManagedUserActive(user);
+    });
+  });
+  if (userManagementBusy) setUserManagementBusy(true);
+}
+
+function readUserRow(row) {
+  const get = field => row.querySelector(`[data-field="${field}"]`);
+  return {
+    id: row.dataset.userId || "",
+    username: get("username").value,
+    display_name: get("display_name").value,
+    role: get("role").value,
+    entry_target: get("entry_target").value,
+    currency: get("currency").value,
+    sales_type: get("sales_type").value,
+    team_ids: readCheckedTeams(get("team_ids")),
+    password: get("password")?.value || "",
+    show_dashboard_card: get("show_dashboard_card").checked,
+    show_entry_list: get("show_entry_list").checked,
+    is_active: get("is_active").checked
+  };
+}
+
+async function saveExistingUser(row) {
+  if (userManagementBusy) return;
+  try {
+    await runUserMutation("user_save", readUserRow(row), "User details saved.");
+  } catch (e) {
+    userManagementFeedback(e.message || "User could not be saved", true);
+  }
+}
+
+function userManagementFeedback(message, isError = false) {
+  ["userManagementStatus", "userDetailsStatus"].forEach(id => {
+    const element = document.getElementById(id);
+    if (!element) return;
+    element.textContent = message;
+    element.classList.toggle("error", isError);
+  });
+}
+
+function setUserManagementBusy(busy) {
+  userManagementBusy = busy;
+  document.querySelectorAll("#userPanel button, #userDetailsDialog button, #userDetailsDialog input, #userDetailsDialog select, #userActionDialog button, #userActionDialog input").forEach(control => {
+    if (busy && !control.disabled) {
+      control.dataset.busyDisabled = "true";
+      control.disabled = true;
+    } else if (!busy && control.dataset.busyDisabled) {
+      control.disabled = false;
+      delete control.dataset.busyDisabled;
+    }
+  });
+}
+
+async function runUserMutation(action, body, message) {
+  if (!canManageUsers()) throw new Error("Owner edit permission required");
+  setUserManagementBusy(true);
+  document.getElementById("userFormError").textContent = "";
+  userManagementFeedback("Saving...");
+  try {
+    await apiRequest(action, { method: "POST", body });
+    try {
+      await loadUsers();
+      await loadEntryUsers();
+      // Re-fetch the selected month so reactivated users regain their saved figures.
+      allData = {}; allUserData = {}; allAdjustments = {}; allUserAdjustments = {}; allLeaves = {};
+      await loadMonthData(document.getElementById("monthSelect").value);
+      buildEntryTable();
+      loadEntryFieldsForDate();
+      renderAll();
+      const current = managedUsers.find(user => Number(user.id) === Number(authUser?.id));
+      if (current) {
+        authUser = { ...authUser, ...current };
+        document.getElementById("currentUserName").textContent = current.display_name || current.username;
+      }
+      syncOpenUserDetails();
+      userManagementFeedback(message);
+    } catch (refreshError) {
+      userManagementFeedback("Changes saved, but the view could not refresh. Reload the page to see the latest details.", true);
+    }
+  } finally {
+    setUserManagementBusy(false);
+  }
+}
+
+function userSwitch(field, title, description, checked, disabled = false) {
+  return `<label class="user-setting">
+    <span><strong>${escapeHTML(title)}</strong><small>${escapeHTML(description)}</small></span>
+    <span class="user-switch"><input type="checkbox" role="switch" aria-label="${escapeHTML(title)}" data-field="${field}" data-user-setting="${field}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}><span class="user-switch-track" aria-hidden="true"></span></span>
+  </label>`;
+}
+
+function openUserDetails(user) {
+  if (!canManageUsers()) return;
+  dismissManualUpdateNotice();
+  const dialog = document.getElementById("userDetailsDialog");
+  const self = Number(user.id) === Number(authUser.id);
+  const body = document.getElementById("userDetailsBody");
+  dialog.dataset.userId = String(user.id);
+  body.dataset.userId = String(user.id);
+  document.getElementById("userDetailsTitle").textContent = user.display_name || user.username;
+  body.innerHTML = `
+    <dl class="user-details-info">
+      <div><dt>User ID</dt><dd>${Number(user.id)}</dd></div>
+      <div><dt>Created</dt><dd>${escapeHTML(user.created_at || "Not available")}</dd></div>
+      <div><dt>Updated</dt><dd id="userDetailsUpdated">${escapeHTML(user.updated_at || "Not available")}</dd></div>
+    </dl>
+    <div class="user-details-fields">
+      <label>Username<input type="text" data-field="username" autocomplete="off" value="${escapeHTML(user.username)}" maxlength="60"></label>
+      <label>Display name<input type="text" data-field="display_name" value="${escapeHTML(user.display_name)}" maxlength="100"></label>
+      <label>Role<select aria-label="Role" data-field="role" ${self ? "disabled" : ""}>${buildRoleOptions(user.role)}</select></label>
+      <label>Monthly entry target<input type="number" min="0" step="any" data-field="entry_target" value="${Number(user.entry_target || 0)}"></label>
+      <label>Sales type<select aria-label="Sales type" data-field="sales_type">${buildSalesTypeOptions(user.sales_type || "leads")}</select></label>
+      <label>Currency<select aria-label="Currency" data-field="currency" ${userSalesType(user) === "leads" ? "disabled" : ""}>${buildCurrencyOptions(user.currency || "USD")}</select></label>
+      <div class="user-details-wide"><span class="user-dialog-note">Assigned teams</span><div data-field="team_ids">${buildTeamDropdown("details_team_ids", user.team_ids || [], managedUserTeams)}</div></div>
+    </div>
+    <div class="user-settings">
+      ${userSwitch("show_dashboard_card", "Show on Dashboard", "Display a performance card for this user.", Number(user.show_dashboard_card) === 1)}
+      ${userSwitch("show_entry_list", "Entry list", "Include this user in daily entry controls.", Number(user.show_entry_list) === 1)}
+      ${userSwitch("is_active", "Account active", self ? "Your current owner account must remain active." : "Turn off to block login and deactivate this account.", Number(user.is_active) === 1, self)}
+    </div>
+    <p class="user-dialog-note">Switches save immediately. Use Save details for profile fields and team assignments. Passwords are never displayed; use Reset password to set a new one.</p>
+    <p class="user-feedback" id="userDetailsStatus" role="status"></p>`;
+  document.getElementById("detailsDeleteUserBtn").disabled = self;
+  body.querySelector('[data-field="sales_type"]').addEventListener("change", e => {
+    body.querySelector('[data-field="currency"]').disabled = e.target.value === "leads";
+  });
+  body.querySelectorAll("[data-user-setting]").forEach(input => {
+    input.addEventListener("change", async () => {
+      if (userManagementBusy) return;
+      const field = input.dataset.userSetting;
+      const next = input.checked;
+      try {
+        await runUserMutation(field === "is_active" ? "user_set_active" : "user_update_settings", { id: user.id, [field]: next }, field === "is_active" ? `Account ${next ? "activated" : "deactivated"}.` : "Visibility setting saved.");
+      } catch (e) {
+        input.checked = !next;
+        userManagementFeedback(e.message || "Setting could not be saved", true);
+      }
+    });
+  });
+  syncOpenUserDetails(true);
+  dialog.showModal();
+  document.body.classList.add("user-dialog-open");
+}
+
+function syncOpenUserDetails(force = false) {
+  const dialog = document.getElementById("userDetailsDialog");
+  if (!dialog.open && !force) return;
+  const user = managedUsers.find(item => Number(item.id) === Number(dialog.dataset.userId));
+  if (!user) { if (dialog.open) dialog.close(); return; }
+  const active = Number(user.is_active) === 1;
+  const state = document.getElementById("userDetailsState");
+  state.textContent = active ? "Active account" : "Inactive account";
+  state.classList.toggle("inactive", !active);
+  document.getElementById("userDetailsTitle").textContent = user.display_name || user.username;
+  document.getElementById("userDetailsUpdated").textContent = user.updated_at || "Not available";
+  dialog.querySelectorAll("[data-user-setting]").forEach(input => { input.checked = Number(user[input.dataset.userSetting]) === 1; });
+}
+
+async function setManagedUserActive(user) {
+  if (userManagementBusy) return;
+  const active = Number(user.is_active) !== 1;
+  try {
+    await runUserMutation("user_set_active", { id: user.id, is_active: active }, `${user.display_name || user.username} ${active ? "activated" : "deactivated"}.`);
+  } catch (e) {
+    userManagementFeedback(e.message || "Account status could not be changed", true);
+  }
+}
+
+function openUserAction(user, action) {
+  if (!canManageUsers() || userManagementBusy) return;
+  dismissManualUpdateNotice();
+  const dialog = document.getElementById("userActionDialog");
+  dialog.dataset.userId = String(user.id);
+  dialog.dataset.action = action;
+  const remove = action === "delete";
+  document.getElementById("userActionTitle").textContent = remove ? "Delete user" : "Reset password";
+  document.getElementById("userActionBody").innerHTML = `
+    <strong class="managed-user-name">${escapeHTML(user.display_name || user.username)}</strong>
+    <span class="managed-user-meta">@${escapeHTML(user.username)}</span>
+    ${remove ? `
+      <p class="user-dialog-note">This removes the account from user management and blocks login. Existing entry history and the username are retained. This action cannot be undone here; use Deactivate for a reversible change.</p>
+      <label class="user-action-field">Type ${escapeHTML(user.username)} to confirm<input type="text" id="deleteUserConfirmation" autocomplete="off" required></label>` : `
+      <label class="user-action-field">New password<input type="password" id="resetUserPassword" autocomplete="new-password" minlength="6" required></label>
+      <label class="user-action-field">Confirm new password<input type="password" id="resetUserPasswordConfirm" autocomplete="new-password" minlength="6" required></label>
+      <label class="password-visibility"><input type="checkbox" id="showResetPassword"> Show password</label>
+      <p class="user-dialog-note">Use at least 6 characters. This action changes only the password.</p>`}
+    <p class="user-feedback error" id="userActionError" role="alert"></p>`;
+  const confirm = document.getElementById("confirmUserActionBtn");
+  confirm.textContent = remove ? "Delete user" : "Reset password";
+  confirm.classList.toggle("danger", remove);
+  confirm.disabled = remove;
+  if (remove) {
+    document.getElementById("deleteUserConfirmation").addEventListener("input", e => { confirm.disabled = e.target.value !== user.username; });
+  } else {
+    document.getElementById("showResetPassword").addEventListener("change", e => {
+      ["resetUserPassword", "resetUserPasswordConfirm"].forEach(id => { document.getElementById(id).type = e.target.checked ? "text" : "password"; });
+    });
+  }
+  dialog.showModal();
+  document.body.classList.add("user-dialog-open");
+  dialog.querySelector("input").focus();
+}
+
+async function submitUserAction(e) {
+  e.preventDefault();
+  if (userManagementBusy) return;
+  const dialog = document.getElementById("userActionDialog");
+  const user = managedUsers.find(item => Number(item.id) === Number(dialog.dataset.userId));
+  if (!user) return;
+  const error = document.getElementById("userActionError");
+  error.textContent = "";
+  const remove = dialog.dataset.action === "delete";
+  const body = { id: user.id };
+  if (remove) {
+    body.confirm_username = document.getElementById("deleteUserConfirmation").value;
+    if (body.confirm_username !== user.username) { error.textContent = "Type the username exactly to confirm."; return; }
+  } else {
+    body.password = document.getElementById("resetUserPassword").value;
+    if (body.password !== document.getElementById("resetUserPasswordConfirm").value) { error.textContent = "Passwords do not match."; return; }
+    if (body.password.length < 6) { error.textContent = "Use at least 6 characters."; return; }
+  }
+  try {
+    await runUserMutation(remove ? "user_delete" : "user_reset_password", body, remove ? "User deleted. Entry history retained." : "Password reset successfully.");
+    dialog.close();
+  } catch (e) {
+    error.textContent = e.message || "User action could not be completed";
+  }
+}
+
+function closeUserManagementDialogs() {
+  ["userActionDialog", "userDetailsDialog"].forEach(id => {
+    const dialog = document.getElementById(id);
+    if (dialog.open) dialog.close();
+  });
+}
+
+function setupUserManagementDialogs() {
+  document.querySelectorAll("[data-close-user-dialog]").forEach(button => {
+    button.addEventListener("click", () => document.getElementById(button.dataset.closeUserDialog).close());
+  });
+  ["userDetailsDialog", "userActionDialog"].forEach(id => {
+    const dialog = document.getElementById(id);
+    dialog.addEventListener("cancel", e => { if (userManagementBusy) e.preventDefault(); });
+    dialog.addEventListener("close", () => {
+      if (id === "userActionDialog") document.getElementById("userActionBody").replaceChildren();
+      const stillOpen = document.getElementById("userDetailsDialog").open || document.getElementById("userActionDialog").open;
+      document.body.classList.toggle("user-dialog-open", stillOpen);
+      if (!stillOpen && document.activeElement === document.body && canManageUsers()) {
+        const row = document.querySelector(`.managed-user-row[data-user-id="${Number(dialog.dataset.userId)}"]`);
+        (row?.querySelector('[data-user-action="details"]') || document.getElementById("usersBtn")).focus({ preventScroll: true });
+      }
+    });
+  });
+  document.getElementById("userActionForm").addEventListener("submit", submitUserAction);
+  document.getElementById("saveUserDetailsBtn").addEventListener("click", () => saveExistingUser(document.getElementById("userDetailsBody")));
+  document.getElementById("detailsResetPasswordBtn").addEventListener("click", () => {
+    const user = managedUsers.find(item => Number(item.id) === Number(document.getElementById("userDetailsDialog").dataset.userId));
+    if (user) openUserAction(user, "reset");
+  });
+  document.getElementById("detailsDeleteUserBtn").addEventListener("click", () => {
+    const user = managedUsers.find(item => Number(item.id) === Number(document.getElementById("userDetailsDialog").dataset.userId));
+    if (user) openUserAction(user, "delete");
+  });
+}
+
+async function addUser() {
+  const err = document.getElementById("userFormError");
+  err.textContent = "";
+  try {
+    await apiRequest("user_save", {
+      method: "POST",
+      body: {
+        username: document.getElementById("newUsername").value,
+        display_name: document.getElementById("newDisplayName").value,
+        role: document.getElementById("newRole").value,
+        entry_target: document.getElementById("newUserTarget").value || 0,
+        currency: document.getElementById("newUserCurrency").value || "USD",
+        sales_type: document.getElementById("newUserSalesType").value || "leads",
+        team_ids: readCheckedTeams(document.getElementById("newTeamChecks")),
+        password: document.getElementById("newPassword").value,
+        show_dashboard_card: document.getElementById("newShowDashboardCard").checked,
+        show_entry_list: document.getElementById("newShowEntryList").checked,
+        is_active: true
+      }
+    });
+    document.getElementById("newUsername").value = "";
+    document.getElementById("newDisplayName").value = "";
+    document.getElementById("newPassword").value = "";
+    document.getElementById("newRole").value = "employee";
+    document.getElementById("newUserTarget").value = "";
+    document.getElementById("newUserCurrency").value = "USD";
+    document.getElementById("newUserSalesType").value = "leads";
+    document.getElementById("newShowDashboardCard").checked = false;
+    document.getElementById("newShowEntryList").checked = true;
+    document.getElementById("newTeamChecks").innerHTML = buildTeamDropdown("new_team_ids", []);
+    await loadEntryUsers();
+    buildEntryTable();
+    loadEntryFieldsForDate();
+    renderAll();
+    await loadUsers();
+    showStatus();
+  } catch (e) {
+    err.textContent = e.message || "User could not be created";
+  }
+}
+
+async function openUsers() {
+  currentView = "users";
+  document.getElementById("homeContent").classList.add("hidden");
+  document.getElementById("teamPanel").classList.add("hidden");
+  document.getElementById("userPanel").classList.remove("hidden");
+  updateModeUI();
+  await loadUsers();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function closeUsers() {
+  showHomeView();
+}
+
+function showHomeView() {
+  currentView = "home";
+  document.getElementById("teamPanel").classList.add("hidden");
+  document.getElementById("userPanel").classList.add("hidden");
+  document.getElementById("ratesPanel").classList.add("hidden");
+  document.getElementById("homeContent").classList.remove("hidden");
+  const url = new URL(window.location.href);
+  url.searchParams.delete("view");
+  history.replaceState(null, "", url.toString());
+  updateModeUI();
+  buildEntryTable();
+  loadEntryFieldsForDate();
+  renderAll();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function openManagementTab(view) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("view", view);
+  history.replaceState(null, "", url.toString());
+  if (view === "teams") await openTeams();
+  if (view === "users") await openUsers();
+  if (view === "rates") await openRates();
+}
+
+async function openRequestedManagementView() {
+  const view = new URLSearchParams(window.location.search).get("view");
+  if (!isOwner() || !["teams", "users", "rates"].includes(view)) return;
+
+  editMode = true;
+  updateModeUI();
+  buildEntryTable();
+  loadEntryFieldsForDate();
+  renderAll();
+
+  if (view === "teams") await openTeams();
+  if (view === "users") await openUsers();
+  if (view === "rates") await openRates();
+}
+
+function openUserManual() {
+  dismissManualUpdateNotice();
+  closeDatePicker();
+  const dialog = document.getElementById("userManualDialog");
+  const frame = document.getElementById("userManualFrame");
+  if (!frame.getAttribute("src")) frame.src = frame.dataset.src;
+  if (!dialog.open) dialog.showModal();
+  document.body.classList.add("manual-open");
+}
+
+const MANUAL_UPDATE_STORAGE_KEY = "team-tracker:manual-update:v1";
+const MANUAL_UPDATE_INTERVAL = 12 * 60 * 60 * 1000;
+let lastManualUpdateShown = null;
+
+function visibleManualButton() {
+  return Array.from(document.querySelectorAll(".manual-link")).find(button => button.getClientRects().length > 0);
+}
+
+function positionManualUpdateNotice() {
+  const notice = document.getElementById("manualUpdateNotice");
+  if (notice.classList.contains("hidden")) return;
+  const button = visibleManualButton();
+  if (!button) return;
+  const target = button.getBoundingClientRect();
+  const margin = 12;
+  notice.classList.toggle("offscreen", target.bottom < 0 || target.top > window.innerHeight);
+  const width = notice.offsetWidth;
+  const height = notice.offsetHeight;
+  const left = Math.max(margin, Math.min(target.right - width, window.innerWidth - width - margin));
+  const above = target.bottom + height + 14 > window.innerHeight - margin && target.top - height - 14 >= margin;
+  const top = above ? target.top - height - 14 : target.bottom + 14;
+  notice.classList.toggle("above", above);
+  notice.style.left = `${left}px`;
+  notice.style.top = `${Math.max(margin, Math.min(top, window.innerHeight - height - margin))}px`;
+  notice.style.setProperty("--notice-arrow-x", `${Math.max(18, Math.min(target.left + target.width / 2 - left, width - 18))}px`);
+}
+
+function dismissManualUpdateNotice() {
+  const notice = document.getElementById("manualUpdateNotice");
+  const restoreFocus = notice.contains(document.activeElement);
+  notice.classList.add("hidden");
+  if (restoreFocus) visibleManualButton()?.focus({ preventScroll: true });
+}
+
+function maybeShowManualUpdateNotice() {
+  const now = Date.now();
+  let lastShown = lastManualUpdateShown;
+  try {
+    const stored = localStorage.getItem(MANUAL_UPDATE_STORAGE_KEY);
+    if (stored !== null) lastShown = Number(stored);
+  } catch (_) { /* The notice still works when browser storage is unavailable. */ }
+  const validLastShown = Number.isFinite(lastShown) && lastShown > 0 && lastShown <= now;
+  const isNewDay = validLastShown && new Date(lastShown).toDateString() !== new Date(now).toDateString();
+  if (validLastShown && !isNewDay && now - lastShown < MANUAL_UPDATE_INTERVAL) return;
+  if (!visibleManualButton()) return;
+  document.getElementById("manualUpdateNotice").classList.remove("hidden");
+  positionManualUpdateNotice();
+  lastManualUpdateShown = now;
+  try {
+    localStorage.setItem(MANUAL_UPDATE_STORAGE_KEY, String(now));
+  } catch (_) { /* Keep the in-memory timestamp for this page visit. */ }
+}
+
+async function boot() {
+  setupUserManagementDialogs();
+  document.addEventListener("click", e => {
+    const button = e.target.closest("[data-history-id]");
+    if (!button) return;
+    e.preventDefault();
+    e.stopPropagation();
+    handleHistoryRevoke(button);
+  });
+  document.getElementById("openManualUpdateBtn").addEventListener("click", openUserManual);
+  document.getElementById("dismissManualUpdateBtn").addEventListener("click", dismissManualUpdateNotice);
+  const manualDialog = document.getElementById("userManualDialog");
+  document.querySelectorAll(".manual-link").forEach(link => {
+    link.addEventListener("click", openUserManual);
+  });
+  document.getElementById("closeUserManualBtn").addEventListener("click", () => manualDialog.close());
+  manualDialog.addEventListener("close", () => document.body.classList.remove("manual-open"));
+  manualDialog.addEventListener("click", e => {
+    if (e.target !== manualDialog) return;
+    const bounds = manualDialog.getBoundingClientRect();
+    if (e.clientX < bounds.left || e.clientX > bounds.right || e.clientY < bounds.top || e.clientY > bounds.bottom) {
+      manualDialog.close();
+    }
+  });
+  document.getElementById("userManualFrame").addEventListener("load", e => {
+    e.target.contentDocument.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        manualDialog.close();
+      }
+    });
+  });
+  enhanceDateInputs();
+  document.addEventListener("click", e => {
+    if (e.target.closest(".date-field") || e.target.closest(".date-picker")) return;
+    closeDatePicker();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+      closeDatePicker();
+      dismissManualUpdateNotice();
+    }
+  });
+  window.addEventListener("resize", () => {
+    positionManualUpdateNotice();
+    const picker = document.getElementById("datePicker");
+    if (picker && activeDatePickerInput) positionDatePicker(activeDatePickerInput, picker);
+  });
+  window.addEventListener("scroll", () => {
+    positionManualUpdateNotice();
+    const picker = document.getElementById("datePicker");
+    if (picker && activeDatePickerInput) positionDatePicker(activeDatePickerInput, picker);
+  }, true);
+  document.getElementById("loginBtn").addEventListener("click", handleLogin);
+  document.getElementById("loginPassword").addEventListener("keydown", e => {
+    if (e.key === "Enter") handleLogin();
+  });
+  document.getElementById("logoutBtn").addEventListener("click", handleLogout);
+  document.getElementById("homeBtn").addEventListener("click", showHomeView);
+  document.getElementById("editModeBtn").addEventListener("click", toggleEditMode);
+  document.getElementById("teamsBtn").addEventListener("click", () => openManagementTab("teams"));
+  document.getElementById("closeTeamsBtn").addEventListener("click", closeTeams);
+  document.getElementById("addTeamBtn").addEventListener("click", addTeam);
+  document.getElementById("ratesBtn").addEventListener("click", () => openManagementTab("rates"));
+  document.getElementById("closeRatesBtn").addEventListener("click", closeRates);
+  document.getElementById("manualRateBtn").addEventListener("click", saveManualRate);
+  document.getElementById("refreshRateBtn").addEventListener("click", refreshLiveRate);
+  document.getElementById("usersBtn").addEventListener("click", () => openManagementTab("users"));
+  document.getElementById("closeUsersBtn").addEventListener("click", closeUsers);
+  document.getElementById("addUserBtn").addEventListener("click", addUser);
+  document.getElementById("quickTeamBtn").addEventListener("click", () => openManagementTab("teams"));
+  document.getElementById("quickUserBtn").addEventListener("click", () => openManagementTab("users"));
+  document.getElementById("monthSelect").addEventListener("change", handleMonthChange);
+  document.getElementById("calendarGrid").addEventListener("keydown", handleCalendarKeyDown);
+  document.getElementById("entryDate").addEventListener("change", handleDateChange);
+  document.getElementById("sidebarDate").addEventListener("change", e => {
+    document.getElementById("entryDate").value = e.target.value;
+    handleDateChange();
+  });
+  document.getElementById("closeDayModalBtn").addEventListener("click", closeDayPopup);
+  document.getElementById("dayModal").addEventListener("click", e => {
+    if (e.target.id === "dayModal") closeDayPopup();
+  });
+  document.getElementById("closeCardModalBtn").addEventListener("click", closeCardPopup);
+  document.getElementById("cardModal").addEventListener("click", e => {
+    if (e.target.id === "cardModal") closeCardPopup();
+  });
+  bindMetricCurrencyToggle("newTeamMetricType", "newTeamCurrency");
+  bindMetricCurrencyToggle("newUserSalesType", "newUserCurrency");
+  document.getElementById("saveBtn").addEventListener("click", handleSave);
+  document.getElementById("clearBtn").addEventListener("click", handleClear);
+
+  try {
+    const data = await apiRequest("me");
+    if (data.authenticated && data.user) {
+      await showApp(data.user);
+    } else {
+      showLogin();
+    }
+  } catch (e) {
+    document.getElementById("loginError").textContent = e.message || "Server unavailable";
+    showLogin();
+  }
+  maybeShowManualUpdateNotice();
+}
+
+boot();
+</script>
+
+</body>
+</html>

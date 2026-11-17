@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Manual | Team Performance Tracker</title>
+  <script>
+    if (new URLSearchParams(window.location.search).get('embedded') === '1') {
+      document.documentElement.classList.add('embedded');
+    }
+  </script>
+  <style>
+    :root { color-scheme: dark; --bg: #101216; --panel: #181b21; --border: #303642; --text: #f0f2f5; --muted: #b2bdcc; --accent: #93bbff; }
+    * { box-sizing: border-box; }
+    html { scroll-padding-top: 24px; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    a:hover { color: #fff; }
+    a:focus-visible, button:focus-visible, input:focus-visible, [tabindex="-1"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+    .skip-link { position: absolute; left: 16px; top: -100px; background: var(--panel); padding: 12px; z-index: 2; }
+    .skip-link:focus { top: 8px; }
+    header { border-bottom: 1px solid var(--border); background: linear-gradient(120deg, #1d2d49, var(--panel)); }
+    .header-inner { max-width: 1260px; margin: auto; padding: 32px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .eyebrow { color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; margin: 0 0 6px; }
+    h1 { margin: 0; font-size: clamp(26px, 4vw, 38px); line-height: 1.2; }
+    header p { margin: 10px 0 0; color: var(--muted); }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .button, button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border: 1px solid #53647e; border-radius: 8px; padding: 8px 14px; color: var(--text); background: #222c3d; font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
+    .button:hover, button:hover { background: #30415c; }
+    .embedded .open-tracker { display: none; }
+    .embedded .header-inner { padding-top: 20px; padding-bottom: 20px; }
+    .layout { max-width: 1260px; margin: auto; padding: 28px 24px 64px; display: grid; grid-template-columns: 255px minmax(0, 1fr); gap: 36px; align-items: start; }
+    aside { position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; padding: 4px 10px 4px 4px; }
+    label, .contents-title { display: block; font-weight: 700; margin-bottom: 8px; }
+    .search-row { display: flex; gap: 6px; }
+    input { min-width: 0; width: 100%; min-height: 44px; padding: 10px; border: 1px solid #65738a; border-radius: 8px; background: var(--panel); color: var(--text); font: inherit; }
+    .search-row button { padding: 6px 10px; }
+    .search-status { min-height: 24px; font-size: 13px; color: var(--muted); margin: 8px 0 20px; }
+    nav a { display: block; border-left: 2px solid var(--border); padding: 7px 12px; font-size: 14px; text-decoration: none; }
+    nav a:hover { background: var(--panel); border-color: var(--accent); }
+    main { min-width: 0; }
+    section { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: clamp(18px, 3vw, 30px); margin-bottom: 20px; overflow-wrap: anywhere; }
+    h2 { font-size: 24px; line-height: 1.3; margin: 0 0 14px; }
+    h3 { font-size: 18px; margin: 24px 0 8px; }
+    p { margin: 10px 0; }
+    li { margin: 7px 0; }
+    ul, ol { padding-left: 24px; }
+    .tag { display: inline-block; font-size: 12px; padding: 3px 9px; margin-bottom: 10px; border: 1px solid #52627a; border-radius: 20px; color: #c5d9ff; }
+    .note { background: #1d2d44; border-left: 3px solid var(--accent); border-radius: 4px; padding: 12px 16px; margin: 18px 0; }
+    .example { background: #202830; border-left: 3px solid #60d59a; padding: 12px 16px; margin: 18px 0; }
+    .table-wrap { max-width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+    th, td { text-align: left; vertical-align: top; padding: 12px; border-bottom: 1px solid var(--border); }
+    th { color: #c5d9ff; }
+    kbd { border: 1px solid #65738a; border-radius: 4px; padding: 1px 5px; font-size: .9em; }
+    #noResults { padding: 28px; border: 1px dashed var(--border); border-radius: 12px; }
+    footer { color: var(--muted); font-size: 13px; padding: 8px 0; }
+    [hidden] { display: none !important; }
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 20px 16px 40px; }
+      .header-inner { padding: 24px 16px; }
+      aside { position: static; max-height: none; padding: 0; }
+      nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 380px) { nav { grid-template-columns: 1fr; } }
+    @media print {
+      :root { color-scheme: light; --bg: #fff; --panel: #fff; --border: #bbb; --text: #111; --muted: #333; --accent: #163e77; }
+      body { font-size: 11pt; }
+      header { background: none; }
+      .header-inner { padding: 0 0 18px; }
+      .actions, aside, .skip-link, #noResults, footer { display: none !important; }
+      .layout { display: block; padding: 18px 0 0; }
+      section, section[hidden] { display: block !important; padding: 16px 0; border: 0; border-bottom: 1px solid #bbb; border-radius: 0; }
+      h2, h3 { break-after: avoid; }
+      tr, .note, .example { break-inside: avoid; }
+      .table-wrap { overflow: visible; }
+      .note, .example { background: #f5f5f5; }
+      .tag, th { color: #163e77; }
+      a { color: #163e77; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#manualContent">Skip to manual</a>
+  <header>
+    <div class="header-inner">
+      <div>
+        <p class="eyebrow">Team Performance Tracker / Help</p>
+        <h1>User manual</h1>
+        <p>A guide to every page, daily workflow, and owner setting.</p>
+      </div>
+      <div class="actions">
+        <a class="button open-tracker" href="index.html">Open tracker</a>
+        <button type="button" id="printManual">Print / Save PDF</button>
+      </div>
+    </div>
+  </header>
+  <div class="layout">
+    <aside aria-label="Find help">
+      <label for="manualSearch">Search the manual</label>
+      <div class="search-row">
+        <input id="manualSearch" type="search" placeholder="Try: revoke, target, users" aria-controls="manualContent" autocomplete="off">
+        <button type="button" id="clearSearch">Clear</button>
+      </div>
+      <p class="search-status" id="searchStatus" role="status">13 sections. Choose a topic below.</p>
+      <p class="contents-title">On this page</p>
+      <nav aria-label="Manual sections">
+        <a href="#quick-start">1. Quick start</a>
+        <a href="#login">2. Login and logout</a>
+        <a href="#roles">3. Roles and navigation</a>
+        <a href="#dashboard">4. Dashboard and filters</a>
+        <a href="#analytics">5. Performance card details</a>
+        <a href="#calendar">6. Calendar and day details</a>
+        <a href="#entries">7. Daily entries and corrections</a>
+        <a href="#logs">8. Daily log</a>
+        <a href="#owner-controls">9. Edit controls and leave</a>
+        <a href="#teams">10. Team management</a>
+        <a href="#users">11. User management</a>
+        <a href="#rates">12. Exchange rates</a>
+        <a href="#troubleshooting">13. Troubleshooting</a>
+      </nav>
+      <noscript><p>Use the topic links or your browser's Find command. Search and the print button need JavaScript; browser printing still works.</p></noscript>
+    </aside>
+    <main id="manualContent" tabindex="-1">
+      <p id="noResults" hidden>No sections match your search. Try a shorter term or select Clear.</p>
+
+      <section id="quick-start" aria-labelledby="quick-start-title">
+        <span class="tag">All users</span>
+        <h2 id="quick-start-title">1. Quick start</h2>
+        <p>The tracker records daily revenue and leads, compares results with targets, and keeps a history of additions and corrections.</p>
+        <ol>
+          <li>Sign in with the username and password provided by your owner.</li>
+          <li>Choose the <strong>Month</strong> and <strong>Entry date</strong> at the top. Check the date before recording figures.</li>
+          <li>Review the dashboard cards. Select a card for detailed performance, or a calendar day for that day's results.</li>
+          <li>In <strong>Enter today's figures</strong>, enter the additional revenue or lead count in an available row and select <strong>Save entry</strong>. Owners first switch <strong>Edit Off</strong> to <strong>Edit On</strong>.</li>
+          <li>Wait for <strong>Saved OK</strong> and check the updated Current value and Daily log.</li>
+          <li>Select <strong>Logout</strong> when finished.</li>
+        </ol>
+        <div class="note">Use the header's question-mark <strong>User manual</strong> button from any app page. It opens this guide in a popup inside the tracker. Select <strong>Close</strong> or press <kbd>Escape</kbd> to return to your current page with your unsaved fields preserved.</div>
+        <p>The blinking arrow and flame-style <strong>New</strong> badge highlight the manual button. A small update notice appears on your first visit, then on the first visit of a new day or once 12 hours have passed since it last appeared. Select <strong>Open manual</strong> to read the guide or <strong>Got it</strong> to dismiss the notice. This timing is remembered in the current browser.</p>
+      </section>
+
+      <section id="login" aria-labelledby="login-title">
+        <h2 id="login-title">2. Login and logout</h2>
+        <p><strong>Features:</strong> username/password sign-in, a sign-in error message, and access to this manual before signing in.</p>
+        <ol>
+          <li>Enter your <strong>Username</strong> and <strong>Password</strong> on the sign-in page.</li>
+          <li>Select <strong>Login</strong>, or press <kbd>Enter</kbd> in the password field.</li>
+          <li>After login, confirm your name and role in the header.</li>
+        </ol>
+        <p>If login fails, check the spelling and password capitalization. An inactive account cannot sign in. Ask an owner to check the account or set a new password in Users; there is no self-service password reset screen.</p>
+        <p>Use <strong>Logout</strong> in the header to end the session and return to sign-in. Save any figures you intend to keep before logging out.</p>
+      </section>
+
+      <section id="roles" aria-labelledby="roles-title">
+        <h2 id="roles-title">3. Roles and navigation</h2>
+        <div class="table-wrap"><table>
+          <caption>Available actions by role</caption>
+          <thead><tr><th scope="col">Role</th><th scope="col">Daily work</th><th scope="col">Administration</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Owner</th><td>Revoke any team or user entry, including while Edit is Off. Turn Edit On to add entries.</td><td>Manage Teams, Users, Exchange Rates, and leave markers while Edit is On.</td></tr>
+            <tr><th scope="row">Manager</th><td>Add entries for assigned teams and their own user row when it is enabled. Revoke only their own remaining contributions.</td><td>Owner management pages are unavailable.</td></tr>
+            <tr><th scope="row">Employee</th><td>Add entries for assigned teams and their own user row when it is enabled. Revoke only their own remaining contributions.</td><td>Owner management pages are unavailable.</td></tr>
+          </tbody>
+        </table></div>
+        <p>Managers and employees use the same entry permissions. Team assignment and the owner's user visibility settings determine which entry rows are available.</p>
+        <p><strong>Home</strong> or <strong>Back Home</strong> returns from a management page to the dashboard. Owners see <strong>Teams</strong>, <strong>Users</strong>, and <strong>Exchange Rates</strong> after enabling Edit. Switching Edit Off returns an owner to Home; Revoke remains available in the entry table.</p>
+        <p><strong>Month</strong> selects the data to display. <strong>Entry date</strong> selects the day for entries and selected-day figures; choosing a date in another month changes the displayed month. Dashboard filters do not grant editing permission.</p>
+      </section>
+
+      <section id="dashboard" aria-labelledby="dashboard-title">
+        <h2 id="dashboard-title">4. Dashboard and filters</h2>
+        <p><strong>Features:</strong> team and enabled user cards, monthly targets, selected-day results, progress rings, daily/monthly progress bars, variance, and recent-performance bars.</p>
+        <ol>
+          <li>Select the Month and Entry date you want to review.</li>
+          <li>Use <strong>Type</strong> to show Teams or Users, <strong>Metric</strong> for Revenue or Leads, and <strong>Currency</strong> for USD or INR revenue.</li>
+          <li>Use <strong>Progress</strong> to narrow status groups, or <strong>Search</strong> to find a team or user by name.</li>
+          <li>Use <strong>From date</strong> and <strong>To date</strong> to examine a date range. The range applies to card calculations within the selected month; select each month separately for a multi-month review.</li>
+          <li>Use quick chips such as <strong>Teams only</strong>, <strong>Users only</strong>, <strong>Revenue only</strong>, or <strong>Leads only</strong>. Select <strong>Clear filters</strong> to reset the card filters and date range.</li>
+        </ol>
+        <p>Without a custom range, Month-to-date actual includes the first of the month through the selected Entry date. With a custom range, cards show Range actual and Expected for range. Card filters apply to cards; the calendar, entry table, and Daily log still show their own month/day data.</p>
+        <h3>Reading a card</h3>
+        <ul>
+          <li><strong>Monthly target:</strong> the configured target. Daily target is monthly target divided by the number of calendar days in that month.</li>
+          <li><strong>Selected day:</strong> the actual result for the chosen Entry date.</li>
+          <li><strong>Expected to date / Expected for range:</strong> daily target multiplied by the number of days in the period.</li>
+          <li><strong>Variance:</strong> actual minus expected. Positive means ahead of the expected amount; negative means behind.</li>
+          <li><strong>Ring:</strong> daily or monthly progress according to the card's setting. With a custom range it reflects actual against the expected range target. A ring may differ from the status badge.</li>
+        </ul>
+        <p>Status badges use monthly completion, or expected-range completion when a range is set: <strong>Top performer</strong> at 120% or above; <strong>Completed</strong> at 100–119%; <strong>On target</strong> at 85–99%; <strong>Slightly below</strong> at 60–84%. Below 60%, a positive selected-day result shows <strong>Warning</strong>; otherwise the badge shows <strong>No progress</strong>. Progress filters group Completed with On target, and Warning with Slightly below. A zero target produces 0% progress.</p>
+        <div class="note"><strong>How totals roll up:</strong> team cards include direct team entries plus entries for assigned users with a matching metric and, for revenue, currency. Assigned manager/owner cards can summarize assigned teams. Those cards overlap with other cards, so do not add every card together as a grand total. Record each result once using your team's agreed team-row or user-row workflow.</div>
+      </section>
+
+      <section id="analytics" aria-labelledby="analytics-title">
+        <h2 id="analytics-title">5. Performance card details</h2>
+        <p>Select any dashboard card to open its detailed view. The heading identifies the team or user, metric, and currency.</p>
+        <ul>
+          <li>Review monthly/daily targets, selected-day actual, period actual, expected result, variance, remaining target, and completion.</li>
+          <li>Compare average per day so far with the required remaining average to understand the pace needed.</li>
+          <li>Review best and worst recorded positive days in the period, Last 7 days through the selected date, and the improving/stable/dropping Trend.</li>
+          <li>Use the <strong>Daily chart</strong>, <strong>Cumulative monthly chart</strong>, and <strong>Target vs actual baseline</strong> to inspect performance. These charts show the month's series, even when card summary figures use a custom range.</li>
+          <li>Read <strong>Add/Revoke history</strong> for up to 20 relevant adjustments, including date, action, amount, actor, and subject.</li>
+        </ul>
+        <p>Select <strong>Close</strong> or click the shaded area outside the popup to return. Make changes using the daily entry table or owner edit sidebar.</p>
+      </section>
+
+      <section id="calendar" aria-labelledby="calendar-title">
+        <h2 id="calendar-title">6. Calendar and day details</h2>
+        <p>The <strong>Daily revenue calendar</strong> shows the selected month. Each day separates <strong>USD</strong>, <strong>INR</strong>, and <strong>Leads</strong>, shows recorded team/user counts, and displays any Leave marker. The summary above it lists month totals in those same separate units.</p>
+        <ol>
+          <li>Select a day. This also changes Entry date and selected-day dashboard figures.</li>
+          <li>In the popup, read <strong>Team performance</strong> and <strong>User performance</strong>.</li>
+          <li>Review <strong>Entry log</strong> for team adjustments and <strong>User log</strong> for individual adjustments, including who added or revoked an amount.</li>
+          <li>Select <strong>Close</strong> or click outside the popup when finished.</li>
+        </ol>
+        <p>When focus is inside the calendar, use <kbd>←</kbd>/<kbd>→</kbd> to move one day and <kbd>↑</kbd>/<kbd>↓</kbd> to move seven days. Navigation can cross month boundaries. Press <kbd>Enter</kbd> on a focused day button to open its details.</p>
+        <p>The date picker also lets you choose a month, year, and day. Press <kbd>Escape</kbd> or click outside it to close the picker.</p>
+        <div class="note">Use the numeric USD, INR, and Leads figures for comparisons. Calendar totals combine direct team entries and user entries separately from card rollups; calendar colors are a quick visual cue, not a currency conversion. Dashboard card filters do not filter the calendar.</div>
+      </section>
+
+      <section id="entries" aria-labelledby="entries-title">
+        <h2 id="entries-title">7. Daily entries and corrections</h2>
+        <p><strong>Features:</strong> available team/user rows, the unit, Current amount, an Amount / Count input, and a separate Revoke input/action. Despite the heading "Enter today's figures", entries use the selected <strong>Entry date</strong>.</p>
+        <h3>Add a result</h3>
+        <ol>
+          <li>Choose the correct Entry date. Owners enable Edit On.</li>
+          <li>Find the correct Team or User row and check its Unit: USD, INR, or Leads.</li>
+          <li>Enter a positive additional amount in <strong>Amount / Count</strong>. You can fill more than one available row.</li>
+          <li>Select <strong>Save entry</strong>. Wait for Saved OK, then confirm Current and the Daily log.</li>
+        </ol>
+        <div class="example"><strong>Example:</strong> Current is USD 100 and you have earned another USD 25. Enter <strong>25</strong> and save; the result becomes USD 125. Entering 125 would add 125 again.</div>
+        <p><strong>Save entry adds to the saved value; it does not replace it.</strong> Blank/zero amounts are skipped. Do not save the same result in both a team row and an assigned user's row, because matching user entries already contribute to the team card.</p>
+        <h3>Correct an amount with Revoke</h3>
+        <p>Owners can revoke entries made by anyone with Edit On or Off. Their entry table includes hidden, inactive, and deleted user rows and inactive teams for corrections. These rows do not enable new additions or restore accounts.</p>
+        <ol>
+          <li>Select the date of the original entry and locate the same Team or User row.</li>
+          <li>Type the positive amount to remove in that row's <strong>Revoke</strong> input.</li>
+          <li>Select that row's <strong>Revoke</strong> button. It applies the correction immediately; Save entry is for additions.</li>
+          <li>Check the updated Current value and the recorded revoke in the log. Add the correct amount separately if needed.</li>
+        </ol>
+        <p>You cannot revoke more than the saved direct entry total for that row/date. Managers and employees can revoke only their own remaining net contributions for that day; an owner can correct other users' contributions. For owners, Current in the entry table shows the direct saved amount available to revoke. Team cards may also include assigned user results; correct those contributions in the original user row.</p>
+        <div class="example"><strong>Correction example:</strong> you entered 50 leads instead of 40. Revoke <strong>10</strong> on the original row/date. The addition and correction remain visible in history.</div>
+        <p><strong>Clear fields</strong> resets unsaved addition/revoke inputs to zero; it does not delete saved records. Changing the date or rebuilding the view can also reset unsaved inputs, so save before navigating.</p>
+        <p>If a multi-row save reports an error, check the log and current values before retrying: some rows may already have saved. Retry only missing additions to avoid duplicate amounts.</p>
+      </section>
+
+      <section id="logs" aria-labelledby="logs-title">
+        <h2 id="logs-title">8. Daily log</h2>
+        <p>The Daily log below the entry table groups saved totals and adjustments by date, with the latest dates first.</p>
+        <ol>
+          <li>Choose the Month you want to inspect.</li>
+          <li>Select a date heading to expand its details. This also selects that Entry date and updates the dashboard.</li>
+          <li>Read the user/actor name, Team or User subject, assigned team where shown, metric, action, amount, and any timestamp or note.</li>
+          <li>Select the heading again to collapse it, or another date to inspect that day.</li>
+        </ol>
+        <p><strong>Added</strong> and <strong>Revoked</strong> are individual adjustments. <strong>Saved total</strong> is a snapshot, not another addition. Do not add snapshot and adjustment values together.</p>
+        <p>Owners can select <strong>Revoke</strong> beside an Added entry in card Add/Revoke history, expanded Daily log, or the calendar Entry/User log, with Edit On or Off. Confirm to remove that entry's full amount from its original team or user and date. The original addition stays visible, a linked correction is recorded, and its button changes to <strong>Revoked</strong>. Repeated requests do not subtract it again. Saved totals and revoke records have no Revoke button. If the saved daily balance is too low to reverse the full entry, use the entry table for a smaller correction.</p>
+      </section>
+
+      <section id="owner-controls" aria-labelledby="owner-controls-title">
+        <span class="tag">Owner · Edit On</span>
+        <h2 id="owner-controls-title">9. Edit controls and leave</h2>
+        <p>Owners start in viewing mode. Select <strong>Edit Off</strong> in the header to switch to <strong>Edit On</strong>. On Home, the Edit controls sidebar appears alongside the dashboard.</p>
+        <ul>
+          <li><strong>+ Team / + User:</strong> open the corresponding management page.</li>
+          <li><strong>Selected day:</strong> changes the same Entry date used by the main page.</li>
+          <li><strong>Day summary:</strong> shows separate unit totals and logged team/user counts.</li>
+          <li><strong>Add / Revoke:</strong> enter an amount next to a team or enabled user and select its button. Each button saves that individual adjustment immediately.</li>
+        </ul>
+        <h3>Mark or clear leave</h3>
+        <ol>
+          <li>Choose the Selected day in the sidebar.</li>
+          <li>Enter an optional <strong>Leave note</strong>, then select <strong>Mark leave</strong>.</li>
+          <li>The date displays a Leave marker in the calendar and its details. To change the note, enter it and select <strong>Update leave</strong>.</li>
+          <li>Select <strong>Clear leave</strong> to remove the marker.</li>
+        </ol>
+        <p>A leave marker applies to the date across the tracker, rather than to a selected employee. It does not remove saved entries or reduce the number of calendar days used for target calculations.</p>
+        <p>Switch <strong>Edit On</strong> back to <strong>Edit Off</strong> when you finish making changes.</p>
+      </section>
+
+      <section id="teams" aria-labelledby="teams-title">
+        <span class="tag">Owner · Edit On</span>
+        <h2 id="teams-title">10. Team management</h2>
+        <p><strong>Open:</strong> enable Edit On, then select <strong>Teams</strong> in the header or <strong>+ Team</strong> in the sidebar.</p>
+        <h3>Create a team</h3>
+        <ol>
+          <li>Enter a <strong>Team name</strong> and a nonnegative <strong>Monthly target</strong>.</li>
+          <li>Choose <strong>Revenue</strong> or <strong>Leads</strong>. For Revenue, choose <strong>USD</strong> or <strong>INR</strong>; currency is disabled for Leads.</li>
+          <li>Set <strong>Order</strong> to control display order; lower numbers appear first.</li>
+          <li>Choose <strong>Daily</strong> or <strong>Monthly</strong> progress mode to control the dashboard ring. The target field remains a monthly target in either mode.</li>
+          <li>Leave <strong>Active</strong> checked and select <strong>Add team</strong>.</li>
+        </ol>
+        <h3>Edit or deactivate a team</h3>
+        <p>Update the existing team's row and select that row's <strong>Save</strong>. Uncheck <strong>Active</strong> and save to remove it from active team views; check Active and save to reactivate it. Deactivation is not deletion of its saved records.</p>
+        <p>Targets, metrics, and currency settings affect how dashboard figures are interpreted. Confirm the intended setting before changing a team with historical entries. To give people entry access to the team, assign it to them in <strong>Users</strong>.</p>
+        <p>Validation errors appear on the page. Correct the indicated name, target, or metric setting and save again. Use <strong>Back Home</strong> when finished.</p>
+      </section>
+
+      <section id="users" aria-labelledby="users-title">
+        <span class="tag">Owner · Edit On</span>
+        <h2 id="users-title">11. User management</h2>
+        <p><strong>Open:</strong> enable Edit On, then select <strong>Users</strong> in the header or <strong>+ User</strong> in the sidebar.</p>
+        <h3>Create an account</h3>
+        <ol>
+          <li>Enter a unique <strong>Username</strong> and a <strong>Display name</strong>.</li>
+          <li>Choose the role: <strong>Owner</strong>, <strong>Manager</strong>, or <strong>Employee</strong>.</li>
+          <li>Set the nonnegative <strong>Entry target</strong> for personal performance. It is used as a monthly target for the user's card; assigned owner/manager cards can instead use assigned team targets.</li>
+          <li>Choose <strong>Revenue</strong> or <strong>Leads</strong>, and USD/INR for Revenue. Currency is disabled for Leads.</li>
+          <li>Open the team selector and check the teams this account should be assigned to. Multiple assignments are supported.</li>
+          <li>Set a password of at least <strong>6 characters</strong>.</li>
+          <li>Choose the visibility options below, then select <strong>Add user</strong>. New accounts are active.</li>
+        </ol>
+        <div class="table-wrap"><table>
+          <thead><tr><th scope="col">Setting</th><th scope="col">What it does</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Show on Dashboard</th><td>Displays a performance card for this user. Unchecked by default for new users.</td></tr>
+            <tr><th scope="row">Entry list</th><td>Includes the user in daily user-entry controls, subject to editing permissions. Checked by default.</td></tr>
+            <tr><th scope="row">Account active</th><td>Turn off in Details to disable login and exclude the account from active user-entry data. This switch saves immediately.</td></tr>
+            <tr><th scope="row">Team assignments</th><td>Allow team-row entry access and determine relevant performance rollups. These are separate from the visibility checkboxes.</td></tr>
+          </tbody>
+        </table></div>
+        <h3>Edit an account or reset a password</h3>
+        <p>Select <strong>Details</strong> on a user's row to open their information popup. Review their ID, creation/update dates, username, display name, role, target, currency, sales type, and assigned teams. Edit profile fields or assignments and select <strong>Save details</strong>.</p>
+        <p>The animated <strong>Show on Dashboard</strong>, <strong>Entry list</strong>, and <strong>Account active</strong> switches save immediately. They do not save other unsaved profile edits. An inactive user's entire row has a red background and an Inactive label.</p>
+        <p>Select <strong>Reset password</strong> from the row or details popup. Enter and confirm a new password of at least 6 characters, then select Reset password. Use Show password to check your input. Passwords currently stored in the account are never displayed. Give the new login details to the intended user through your normal private channel.</p>
+        <h3>Deactivate, reactivate, or delete</h3>
+        <p>Select <strong>Deactivate</strong> on the row, or turn Account active off in Details, to block login. Use <strong>Activate</strong> or turn the switch on to restore access. Saved history is retained.</p>
+        <p>Select <strong>Delete</strong> on the row, or <strong>Delete user</strong> in Details, then type the exact username and confirm. The account disappears from user management and login is blocked. Its identity, username, assignments, and entry history are retained for historical records; the username cannot be reused and there is no restore action here. Use Deactivate when you want to reverse the change later.</p>
+        <p>You cannot deactivate or delete your own current owner account, or remove your own owner role. Only owners can perform these actions. Errors appear in the popup or above the list; failed toggle saves restore the previous switch state.</p>
+        <p>Use <strong>Back Home</strong> to return and confirm the intended cards and entry rows appear.</p>
+      </section>
+
+      <section id="rates" aria-labelledby="rates-title">
+        <span class="tag">Owner · Edit On</span>
+        <h2 id="rates-title">12. Exchange rates</h2>
+        <p><strong>Open:</strong> enable Edit On and select <strong>Exchange Rates</strong>. This page manages the current USD/INR rate pair and its history.</p>
+        <h3>Set a manual rate</h3>
+        <ol>
+          <li>Enter a positive <strong>USD to INR rate</strong>: the amount of INR for 1 USD.</li>
+          <li>Select <strong>Manual override</strong>.</li>
+          <li>Confirm the current <strong>USD to INR</strong>, automatically calculated inverse <strong>INR to USD</strong>, and <strong>Last updated</strong> value.</li>
+        </ol>
+        <div class="example"><strong>Example:</strong> entering 83 means 1 USD = 83 INR. The inverse is approximately 0.012048 USD per INR. This is an example, not a current exchange-rate quote.</div>
+        <h3>Refresh a live rate</h3>
+        <p>Select <strong>Refresh live rate</strong> to request a rate from the configured provider. If the live service is unavailable, the page shows an error; enter an agreed manual rate instead.</p>
+        <p><strong>Rate history</strong> lists recorded currency pairs, values, and whether their source was manual or live. The tracker currently displays revenue in its original USD/INR units; saving an exchange rate does not convert the dashboard or calendar amounts.</p>
+        <p>Select <strong>Back Home</strong> to return.</p>
+      </section>
+
+      <section id="troubleshooting" aria-labelledby="troubleshooting-title">
+        <h2 id="troubleshooting-title">13. Troubleshooting</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th scope="col">What you see</th><th scope="col">What to do</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Invalid username or password</th><td>Check the credentials and password capitalization. Ask an owner to confirm the account is active or reset the password.</td></tr>
+            <tr><th scope="row">Teams, Users, or Exchange Rates missing</th><td>These controls require an owner account with Edit On.</td></tr>
+            <tr><th scope="row">Read-only access or disabled inputs</th><td>Owners enable Edit On. Other users ask an owner to check team assignments and the Entry list setting.</td></tr>
+            <tr><th scope="row">No assigned teams or user entries</th><td>Ask the owner to confirm active teams, your assignments, and whether your user entry row is enabled.</td></tr>
+            <tr><th scope="row">No dashboard cards match this filter</th><td>Select Clear filters and check Month/Entry date. For a missing user card, ask an owner to enable Show on Dashboard.</td></tr>
+            <tr><th scope="row">Enter at least one amount greater than 0</th><td>Enter a positive amount in an editable Amount / Count field. Revoke values use their row's Revoke button.</td></tr>
+            <tr><th scope="row">Revoke amount is greater than the saved total</th><td>Check the original row and date. A team card may include user entries that must be corrected on the user row.</td></tr>
+            <tr><th scope="row">You can only revoke your own daily entry amount</th><td>Revoke no more than your remaining contribution on that date, or ask an owner to correct another person's entry.</td></tr>
+            <tr><th scope="row">Figures appear doubled</th><td>Inspect the log for repeated additions or the same result entered in both team and user rows. Revoke the duplicate on its original row/date.</td></tr>
+            <tr><th scope="row">Live rate unavailable</th><td>Enter a positive manual USD-to-INR rate, then select Manual override.</td></tr>
+            <tr><th scope="row">Loading, save failure, or server unavailable</th><td>Check the connection. After a failed save, reload and inspect Current and the log before retrying. If the issue continues, report the action, date, and displayed error to the administrator.</td></tr>
+            <tr><th scope="row">Login required while working</th><td>The session is no longer available. Sign in again, verify the log, and re-enter only unsaved figures.</td></tr>
+          </tbody>
+        </table></div>
+        <p>On smaller screens, scroll down for all sections and scroll wide tables sideways as needed. The manual's <strong>Search</strong> finds matching sections; <strong>Clear</strong> restores all topics.</p>
+        <p>Select <strong>Print / Save PDF</strong> to print the complete manual, including sections hidden by search. In your browser's print dialog choose Save as PDF to keep a copy.</p>
+      </section>
+      <footer>Team Performance Tracker user manual · <a href="#quick-start">Back to quick start</a></footer>
+    </main>
+  </div>
+  <script>
+    const search = document.getElementById('manualSearch');
+    const sections = Array.from(document.querySelectorAll('main section'));
+    const sectionLinks = Array.from(document.querySelectorAll('nav a'));
+    const searchStatus = document.getElementById('searchStatus');
+    function filterManual() {
+      const terms = search.value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+      let count = 0;
+      sections.forEach((section, index) => {
+        const content = section.textContent.toLocaleLowerCase();
+        const matches = terms.every(term => content.includes(term));
+        section.hidden = !matches;
+        sectionLinks[index].hidden = !matches;
+        if (matches) count++;
+      });
+      document.getElementById('noResults').hidden = count !== 0;
+      searchStatus.textContent = terms.length
+        ? `${count} of ${sections.length} sections match.`
+        : `${sections.length} sections. Choose a topic below.`;
+    }
+    search.addEventListener('input', filterManual);
+    document.getElementById('clearSearch').addEventListener('click', () => {
+      search.value = '';
+      filterManual();
+      search.focus();
+    });
+    document.getElementById('printManual').addEventListener('click', () => window.print());
+    // Reveal a linked topic even if a browser back/forward action changes the hash during a search.
+    function revealLinkedSection() {
+      const section = sections.find(item => `#${item.id}` === window.location.hash);
+      if (section && section.hidden) {
+        search.value = '';
+        filterManual();
+        section.scrollIntoView();
+      }
+    }
+    window.addEventListener('hashchange', revealLinkedSection);
+  </script>
+</body>
+</html>
